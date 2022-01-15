@@ -86,6 +86,7 @@ CP2MapPublisher::CP2MapPublisher( QWidget *pParent, bool edit ) : QDialog( pPare
     
     this->setLayout( pDialogLayout );
     this->setFixedSize( this->sizeHint() );
+	this->setWindowFlag( Qt::WindowContextHelpButtonHint, false );
 }
 
 void CP2MapPublisher::onAdvancedClicked(){

@@ -1,11 +1,20 @@
 #include "dialogs/P2MapMainWindow.h"
-#include <bits/stdc++.h>
 
 using namespace std;
 using namespace ui;
 
 CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) : QDialog( pParent )
 {
+    // Make sure steam_appid.txt exists
+	QString filename = "steam_appid.txt";
+	QFile file( filename );
+	if ( file.open( QIODevice::ReadWrite ) )
+	{
+		QTextStream stream( &file );
+        // todo: maybe don't hardcode this at some point?
+		stream << "644" << endl;
+	}
+
     if(!SteamAPI_Init()){
         QMessageBox::StandardButton box = QMessageBox::warning( nullptr, tr("Steam API Error"), tr("The Steam API could not Initialize! \nMake sure you have the steam client running.") );
         this->close();
@@ -31,7 +40,7 @@ CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) : QDialog( pParent )
     m_timezoneComboBox->addItem(val);
 
     m_treeWidget = new QTreeWidget(this);
-            m_treeWidget->setFixedSize( 720, 300);
+    m_treeWidget->setFixedSize( 720, 300);
     m_treeWidget->setColumnCount(3);
     auto qStringList = QStringList();
     qStringList.append("Title");
@@ -65,6 +74,7 @@ CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) : QDialog( pParent )
 
     this->setLayout( pDialogLayout );
     this->setFixedSize( this->sizeHint() );
+	this->setWindowFlag( Qt::WindowContextHelpButtonHint, false );
 
     runSetCallbacks();
 }
