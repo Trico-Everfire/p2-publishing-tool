@@ -22,6 +22,7 @@
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QTreeWidget>
+#include <QComboBox>
 
 QT_BEGIN_NAMESPACE
 
@@ -37,13 +38,14 @@ public:
     QToolButton *toolButton_3;
     QToolButton *toolButton_4;
     QToolButton *toolButton_5;
+    QToolButton *toolButton_6;
+    QToolButton *toolButton_7;
     QLabel *label;
     QLabel *label_3;
     QLabel *label_4;
     QTextEdit *textEdit;
     QLabel *label_5;
     QLineEdit *lineEdit_2;
-    QToolButton *toolButton_6;
     QTreeWidget *treeWidget_2;
     QComboBox *comboBox;
     QLabel *label_2;
@@ -61,7 +63,7 @@ public:
         buttonBox->setStandardButtons(QDialogButtonBox::Ok);
         checkBox_3 = new QCheckBox(Advanced);
         checkBox_3->setObjectName(QString::fromUtf8("checkBox_3"));
-        checkBox_3->setGeometry(QRect(20, 380, 241, 22));
+        checkBox_3->setGeometry(QRect(20, 405, 241, 22));
         lineEdit = new QLineEdit(Advanced);
         lineEdit->setObjectName(QString::fromUtf8("lineEdit"));
         lineEdit->setGeometry(QRect(20, 180, 141, 32));
@@ -71,7 +73,7 @@ public:
         treeWidget = new QTreeWidget(Advanced);
         new QTreeWidgetItem(treeWidget);
         treeWidget->setObjectName(QString::fromUtf8("treeWidget"));
-        treeWidget->setGeometry(QRect(20, 220, 231, 151));
+        treeWidget->setGeometry(QRect(20, 220, 231, 131));
         toolButton_2 = new QToolButton(Advanced);
         toolButton_2->setObjectName(QString::fromUtf8("toolButton_2"));
         toolButton_2->setGeometry(QRect(230, 50, 111, 31));
@@ -84,6 +86,9 @@ public:
         toolButton_5 = new QToolButton(Advanced);
         toolButton_5->setObjectName(QString::fromUtf8("toolButton_5"));
         toolButton_5->setGeometry(QRect(230, 140, 111, 31));
+        toolButton_7 = new QToolButton(Advanced);
+        toolButton_7->setObjectName(QString::fromUtf8("toolButton_5"));
+        toolButton_7->setGeometry(QRect(20, 360, 231, 31));
         label = new QLabel(Advanced);
         label->setObjectName(QString::fromUtf8("label"));
         label->setGeometry(QRect(20, 50, 201, 121));
@@ -145,6 +150,8 @@ public:
         toolButton_3->setText(QCoreApplication::translate("Advanced", "Down", nullptr));
         toolButton_4->setText(QCoreApplication::translate("Advanced", "Add", nullptr));
         toolButton_5->setText(QCoreApplication::translate("Advanced", "Remove", nullptr));
+        toolButton_7->setText(QCoreApplication::translate("Advanced", "Remove Tag", nullptr));
+        toolButton_7->setDisabled(true);
         label->setText(QString());
         label_3->setText(QCoreApplication::translate("Advanced", "<html><head/><body><p><span style=\" font-size:16pt;\">Images</span></p></body></html>", nullptr));
         label_4->setText(QCoreApplication::translate("Advanced", "<html><head/><body><p><span style=\" font-size:16pt;\">Videos</span></p></body></html>", nullptr));
@@ -158,6 +165,7 @@ public:
         comboBox->setItemText(3, QCoreApplication::translate("Advanced", "unlisted", nullptr));
 
         label_2->setText(QCoreApplication::translate("Advanced", "<html><head/><body><p><span style=\" font-size:12pt;\">Visibility:</span></p></body></html>", nullptr));
+        Advanced->setFixedSize(700, 442);
     } // retranslateUi
 
 };

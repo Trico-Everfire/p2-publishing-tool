@@ -22,7 +22,6 @@ CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) : QDialog( pParent )
 	pEditButton->setDisabled(true);
     auto pRefreshButton = pButtonBox->addButton( tr("Refresh"), QDialogButtonBox::ActionRole );
 
-
     QLabel *timezoneLabel = new QLabel(this);
     timezoneLabel->setText(tr("Timezone:"));
     m_timezoneComboBox = new QComboBox(this);
@@ -31,7 +30,7 @@ CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) : QDialog( pParent )
     m_timezoneComboBox->addItem(val);
 
     m_treeWidget = new QTreeWidget(this);
-            m_treeWidget->setFixedSize( 720, 300);
+    m_treeWidget->setFixedSize( 720, 300);
     m_treeWidget->setColumnCount(3);
     auto qStringList = QStringList();
     qStringList.append("Title");
