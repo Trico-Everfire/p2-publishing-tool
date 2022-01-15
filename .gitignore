@@ -1,9 +1,8 @@
-build/**
-!build/steam_appid.txt
+build/
 .vscode 
 .idea
 .ccls-cache
-libs/Steam-Workshop-API/sdk/**
+libs/Steam-Workshop-API/sdk/
 
 
 
@@ -11,6 +10,7 @@ libs/Steam-Workshop-API/sdk/**
 .vs/
 .vscode/
 CMakeFiles/
+out/
 [Dd]ebug*/
 [Rr]elease*/
 *.dir/
@@ -18,6 +18,7 @@ CMakeFiles/
 *.vcxproj*
 cmake_install.cmake
 CMakeCache.txt
+CMakeSettings.json
 *.sln
 
 # CMake with CLion

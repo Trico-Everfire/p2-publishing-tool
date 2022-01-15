@@ -1,8 +1,9 @@
 #pragma once
-#include "../libs/Steam-Workshop-API/sdk/public/steam/steam_api.h"
+
+#include <steam_api.h>
 
 //Boolean variable that dictates the loop state, true cuts the loop while false keeps the loop alive when called.
-static bool g_steamAPICallbacksSetLoaded = true; 
+static bool g_steamAPICallbacksSetLoaded = false; 
  
 //This initiates the API state variable and a while loop function, Steam's SteamAPI_RunCallbacks relies on it being called when needed, usually in games this can be called every render frame, however, This application is single threadded, meaning if we constantly call it every "tick" we'll end up locking up the application. So we only call it when it's needed, and cancel out of the loop when we have the data we need. this also allows us to lock the application when it's getting data, preventing the user from messing stuff up while it's busy processing the data.  
 inline static void BaseSteamCallbackLoop()
