@@ -1,4 +1,6 @@
-#define	LUMP_AMOUNT	64
+#pragma once
+
+static constexpr const int LUMP_AMOUNT = 64;
 
 struct lumpData_t
 {
