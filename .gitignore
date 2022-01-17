@@ -3,6 +3,8 @@ build/
 .idea
 .ccls-cache
 libs/Steam-Workshop-API/sdk/
+libs/Qt/**
+!libs/Qt/Readme.txt
 
 
 

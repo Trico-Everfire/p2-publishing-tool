@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.15)
 
 project(p2_map_publisher CXX)
 
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+set(CMAKE_INSTALL_RPATH $ORIGIN)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS   ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -30,6 +34,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+
+
+
+
 set(SRC
 	# Dialogs
 	dialogs/P2MapPublisher.h
@@ -47,14 +55,19 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui)
 set(APP_ICON_RESOURCE_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR}/res/appicon.rc)
 
 if(UNIX)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Core.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Core.so" COPYONLY)
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Gui.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Gui.so" COPYONLY)
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Widgets.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Widgets.so" COPYONLY)
+	
 	set(STEAM_API  "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so")
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so" "${CMAKE_BINARY_DIR}/libsteam_api.so" COPYONLY)
 elseif(WIN32)
 	# MinGW doesn't like this, but the steam api DLL is incompatible with it anyway
 	set(STEAM_API  "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/win64/steam_api64.lib")
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/win64/steam_api64.dll" "${CMAKE_BINARY_DIR}/steam_api64.dll" COPYONLY)
 endif()
 
-add_executable(${PROJECT_NAME} ${SRC} res/zoo_textures.qrc ${APP_ICON_RESOURCE_WINDOWS})
+add_executable(${PROJECT_NAME} ${SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS})
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui ${STEAM_API})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
