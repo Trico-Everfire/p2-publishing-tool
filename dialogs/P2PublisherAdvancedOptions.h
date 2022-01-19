@@ -31,6 +31,9 @@
 #include <QPixmap>
 #include <QDebug>
 #include <QFileInfo>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QUrl>
+#include <QtNetwork/QNetworkReply>
 
 QT_BEGIN_NAMESPACE
 
@@ -219,9 +222,29 @@ public:
 			
 			if ( ImageTree->selectedItems().length() == 1 ){
 				QString filePath = ImageTree->selectedItems()[0]->data(0,Qt::UserRole).toString();
+				QPixmap tempMap;
+				if(filePath.startsWith("https://steamuserimages-a.akamaihd.net/ugc/")){
+					qInfo() << filePath;
+					QNetworkAccessManager manager{};
+
+					QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(filePath)));
+
+					QEventLoop loop;
+					QObject::connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+					QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
+					loop.exec();
+
+					QByteArray bts = reply->readAll();
+					// qInfo() << bts;
+					delete reply;
+
+					tempMap = QPixmap();
+					tempMap.loadFromData(bts);
+				} else {
+					tempMap = QPixmap( filePath );
+					toolButton_5->setEnabled(true);
+				}
 				// qInfo() << ImageTree->selectedItems()[0]->data();
-				QPixmap tempMap = QPixmap( filePath );
-                toolButton_5->setEnabled(true);
 				label->setPixmap(tempMap);
             } else {
 				label->setPixmap(QPixmap( "" ));

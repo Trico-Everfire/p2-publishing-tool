@@ -205,33 +205,46 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 }
 
 void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure ){
-	qInfo() << "testing";
-	
-	SteamUGCDetails_t pDetails{};
-	SteamUGC()->GetQueryUGCResult( pQuery->m_handle, m_EditItemIndex, &pDetails );
-	//qInfo() << pDetails.m_flScore;
+    qInfo() << "testing";
 
-	uint32 itemCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews(pQuery->m_handle, m_EditItemIndex);
-	qInfo() << itemCount;
-	for(int i = 0; i < itemCount; i++){
-		int a = 0,b = 0;
-		char* img{};
-		char vid{};
-		EItemPreviewType type{};
-		qInfo() << SteamUGC()->GetQueryUGCAdditionalPreview(pQuery->m_handle,m_EditItemIndex,i,&vid,a,img,b,&type);
-		if(type == k_EItemPreviewType_Image){
-				auto item = new QTreeWidgetItem( 0 );
-				item->setText( 0, QString( img ) );
-				AO->ImageTree->addTopLevelItem( item );
-		}
-		if(type == k_EItemPreviewType_YouTubeVideo){
-				auto item = new QTreeWidgetItem( 0 );
-				item->setText( 0, QString( vid ) );
-				AO->treeWidget_2->addTopLevelItem( item );
-		}
+    SteamUGCDetails_t pDetails {};
+    SteamUGC()->GetQueryUGCResult( pQuery->m_handle, m_EditItemIndex, &pDetails );
+    //qInfo() << pDetails.m_flScore;
 
-	}
-	FinishLoopCall();
+    uint32 iCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews( pQuery->m_handle, m_EditItemIndex );
+
+    for ( uint32 i = 0; i < iCount; i++ )
+    {
+        const uint iUrlSize = 2000;
+        char pchUrl[iUrlSize];
+		// const uint iUrl2Size = 20000;
+		// char pchFileURL[iUrl2Size];
+        const uint iFileSize = 2000;
+        char pchFileName[iFileSize];
+        EItemPreviewType pType;
+
+        SteamUGC()->GetQueryUGCAdditionalPreview( pQuery->m_handle, m_EditItemIndex, i,
+                                                  pchUrl, iUrlSize, pchFileName,
+                                                  iFileSize, &pType );
+        QTreeWidgetItem *pItem = new QTreeWidgetItem( 0 );
+        switch ( pType )
+        {
+            case k_EItemPreviewType_Image:
+				// SteamUGC()->GetQueryUGCPreviewURL( pQuery->m_handle, i, pchFileURL, iUrl2Size );
+				// qInfo() << pchFileURL;
+				pItem->setText( 0, QString( pchFileName ) );
+				pItem->setData(0,Qt::UserRole, pchUrl);
+                AO->ImageTree->addTopLevelItem( pItem );
+                break;
+
+            case k_EItemPreviewType_YouTubeVideo:
+				pItem->setText( 0, QString( pchUrl ) );
+                AO->treeWidget_2->addTopLevelItem( pItem );
+                break;
+        }
+    }
+
+    FinishLoopCall();
 	
 }
 

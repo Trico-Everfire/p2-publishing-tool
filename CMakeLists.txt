@@ -50,7 +50,7 @@ set(SRC
 	dialogs/P2PTIDialog.h
 	P2Publish.cpp
 )
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network)
 
 set(APP_ICON_RESOURCE_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR}/res/appicon.rc)
 
@@ -58,6 +58,7 @@ if(UNIX)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Core.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Core.so" COPYONLY)
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Gui.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Gui.so" COPYONLY)
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Widgets.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Widgets.so" COPYONLY)
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Network.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Network.so" COPYONLY)
 	
 	set(STEAM_API  "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so")
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so" "${CMAKE_BINARY_DIR}/libsteam_api.so" COPYONLY)
@@ -68,10 +69,10 @@ elseif(WIN32)
 endif()
 
 add_executable(${PROJECT_NAME} ${SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS})
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui ${STEAM_API})
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network ${STEAM_API})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-target_include_directories(${PROJECT_NAME} PRIVATE "${QT_INCLUDE} ${QT_INCLUDE}/QtWidgets" "${QT_INCLUDE}/QtGui" "${QT_INCLUDE}/QtCore")
+target_include_directories(${PROJECT_NAME} PRIVATE "${QT_INCLUDE} ${QT_INCLUDE}/QtWidgets" "${QT_INCLUDE}/QtGui" "${QT_INCLUDE}/QtCore" "${QT_INCLUDE}/QtNetwork")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/public/steam")
 
 if(WIN32)
@@ -79,6 +80,7 @@ if(WIN32)
 	configure_file("${QT_BASEDIR}/bin/Qt5Core.dll"    "${CMAKE_BINARY_DIR}/Qt5Core.dll"    COPYONLY)
 	configure_file("${QT_BASEDIR}/bin/Qt5Gui.dll"     "${CMAKE_BINARY_DIR}/Qt5Gui.dll"     COPYONLY)
 	configure_file("${QT_BASEDIR}/bin/Qt5Widgets.dll" "${CMAKE_BINARY_DIR}/Qt5Widgets.dll" COPYONLY)
+	configure_file("${QT_BASEDIR}/bin/Qt5Network.dll" "${CMAKE_BINARY_DIR}/Qt5Network.dll" COPYONLY)
 	configure_file("${QT_BASEDIR}/plugins/platforms/qwindows.dll"         "${CMAKE_BINARY_DIR}/platforms/qwindows.dll"         COPYONLY)
 	configure_file("${QT_BASEDIR}/plugins/platforms/qwindowsd.dll"        "${CMAKE_BINARY_DIR}/platforms/qwindowsd.dll"        COPYONLY)
 	configure_file("${QT_BASEDIR}/plugins/styles/qwindowsvistastyle.dll"  "${CMAKE_BINARY_DIR}/styles/qwindowsvistastyle.dll"  COPYONLY)
