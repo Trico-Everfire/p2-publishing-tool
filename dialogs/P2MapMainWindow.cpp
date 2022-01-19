@@ -199,7 +199,7 @@ void CP2MapMainMenu::onEditPressed()
 	SteamUGCDetails_t Details = SUGCD.at( itemIndex );
 	qInfo() << Details.m_pchFileName;
 	CP2MapPublisher *publisher = new CP2MapPublisher( this, true );
-	publisher->LoadExistingDetails( Details );
+	publisher->LoadExistingDetails( Details, itemIndex );
 	publisher->exec();
 
 	// UGCUpdateHandle_t hUpdateHandle = SteamUGC()->StartItemUpdate(CP2MapMainMenu::ConsumerID, Details.m_nPublishedFileId);
@@ -276,20 +276,20 @@ void CP2MapMainMenu::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bo
 	for ( int index = 0; index < pQuery->m_unNumResultsReturned; index++ )
 	{
 		// Get the workshop item from index
-		SteamUGCDetails_t *pDetails = new SteamUGCDetails_t();
-		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, index, pDetails );
+		SteamUGCDetails_t pDetails{};
+		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, index, &pDetails );
 
 		// QTimeZone timezone = QTimeZone(QTimeZone::availableTimeZoneIds()[0]); //we default to the first ID as that'll be the first ID inside the selection box.
-		QDateTime time = QDateTime::fromSecsSinceEpoch( pDetails->m_rtimeUpdated );
+		QDateTime time = QDateTime::fromSecsSinceEpoch( pDetails.m_rtimeUpdated );
 
 		m_timezoneComboBox->setCurrentIndex( QTimeZone::availableTimeZoneIds().indexOf( time.timeZone().id() ) );
 		// Retrieve information. https://partner.steamgames.com/doc/api/ISteamUGC#SteamUGCDetails_t
 		auto item = new QTreeWidgetItem( 0 );
-		item->setText( 0, pDetails->m_rgchTitle );
-		item->setText( 1, pDetails->m_pchFileName );
+		item->setText( 0, pDetails.m_rgchTitle );
+		item->setText( 1, pDetails.m_pchFileName );
 		item->setText( 2, time.toString() );
 		item->setData( 1, Qt::UserRole, index );
-		SUGCD.insert( std::pair<int, SteamUGCDetails_t>( index, *pDetails ) );
+		SUGCD.insert( std::pair<int, SteamUGCDetails_t>( index, pDetails ) );
 		item->setTextAlignment( 0, Qt::AlignCenter );
 		item->setTextAlignment( 1, Qt::AlignCenter );
 		item->setTextAlignment( 2, Qt::AlignCenter );
@@ -298,7 +298,7 @@ void CP2MapMainMenu::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bo
 		item->setForeground( 2, QColor( 255, 255, 255 ) );
 		m_treeWidget->addTopLevelItem( item );
 
-		totalLoadedItems.push_back( pDetails->m_rtimeUpdated );
+		totalLoadedItems.push_back( pDetails.m_rtimeUpdated );
 		qInfo() << time.toString() << "\n";
 	}
 	FinishLoopCall();

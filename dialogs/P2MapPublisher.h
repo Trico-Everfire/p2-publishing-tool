@@ -19,6 +19,8 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
+#include <sstream>
+
 
 namespace ui
 {
@@ -31,6 +33,7 @@ namespace ui
 		CP2MapPublisher( QWidget *pParent, bool edit );
 		bool m_edit;
 		bool m_bspHasPTIInstance;
+		uint32 m_EditItemIndex;
 		QPixmap *m_pPreviewImage;
 		QLabel *pImageLabel;
 		QLineEdit *pFileEntry;
@@ -39,12 +42,13 @@ namespace ui
 		QString defaultFileLocBSP = "./";
 		QString defaultFileLocIMG = "./";
 		QCheckBox *pSteamToSAgreement;
-		void LoadExistingDetails( SteamUGCDetails_t details );
+		void LoadExistingDetails( SteamUGCDetails_t details, uint32 index );
 		void setDefaultBspLoc( QString string );
 		void setDefaultImgpLoc( QString string );
 		void LoadCreatingItem();
 		void UpdateItem( PublishedFileId_t itemID );
 		void LoadEditItem();
+		std::vector<std::string> splitString(const std::string& input, char delimiter);
 
 		// Every callback starts with the type sent and a bool
 		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );

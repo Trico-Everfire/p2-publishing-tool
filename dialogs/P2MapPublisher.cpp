@@ -174,17 +174,63 @@ void CP2MapPublisher::OnOldApiSubmitItemUpdate( RemoteStorageUpdatePublishedFile
 	qInfo() << pItem->m_eResult << "\n";
 }
 
-void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details )
+void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 index )
 {
 	m_editItemDetails = details;
 	pFileEntry->setText( details.m_pchFileName );
 	pTitleLine->setText( details.m_rgchTitle );
 	pDescLine->setText( details.m_rgchDescription );
+	m_EditItemIndex = index;
+
+	std::vector<std::string> vector = splitString(details.m_rgchTags,',');
+	for(std::string str : vector){
+		if(str == "Singleplayer") continue;
+	 	auto item = new QTreeWidgetItem( 0 );
+	 	item->setText( 0, QString( str.c_str() ) );
+	 	AO->treeWidget->addTopLevelItem( item );
+	}
 
 	std::string dir = QDir::currentPath().toStdString() + "/resources/" + std::to_string( details.m_nPublishedFileId ) + "_Image0.png";
 	SteamAPICall_t res = SteamRemoteStorage()->UGCDownloadToLocation( details.m_hPreviewFile, dir.c_str(), 0 );
 	m_CallOldApiResultSubmitItemDownload.Set( res, this, &CP2MapPublisher::OnOldApiSubmitItemDownload );
 	StartLoopCall();
+	UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published, k_EUGCMatchingUGCType_Items_ReadyToUse, k_EUserUGCListSortOrder_CreationOrderDesc, SteamUtils()->GetAppID(), CP2MapMainMenu::ConsumerID, 1 );
+	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
+	m_CallResultSendQueryUGCRequest.Set( hApiQueryHandle, this, &CP2MapPublisher::OnSendQueryUGCRequest );
+	StartLoopCall();
+	SteamUGC()->ReleaseQueryUGCRequest( hQueryResult );
+
+
+}
+
+void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure ){
+	qInfo() << "testing";
+	
+	SteamUGCDetails_t pDetails{};
+	SteamUGC()->GetQueryUGCResult( pQuery->m_handle, m_EditItemIndex, &pDetails );
+	qInfo() << pDetails.m_rgchTitle;
+
+	uint32 itemCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews(pQuery->m_handle, m_EditItemIndex);
+	qInfo() << itemCount;
+	for(int i = 0; i < itemCount; i++){
+		int a = 0,b = 0;
+		char img{},vid{};
+		EItemPreviewType type{};
+		SteamUGC()->GetQueryUGCAdditionalPreview(pQuery->m_handle,m_EditItemIndex,i,&vid,a,&img,b,&type);
+		if(type == k_EItemPreviewType_Image){
+				auto item = new QTreeWidgetItem( 0 );
+				item->setText( 0, QString( img ) );
+				AO->ImageTree->addTopLevelItem( item );
+		}
+		if(type == k_EItemPreviewType_YouTubeVideo){
+				auto item = new QTreeWidgetItem( 0 );
+				item->setText( 0, QString( vid ) );
+				AO->treeWidget_2->addTopLevelItem( item );
+		}
+
+	}
+	FinishLoopCall();
+	
 }
 
 void CP2MapPublisher::OnOldApiSubmitItemDownload( RemoteStorageDownloadUGCResult_t *pItem, bool pFailure )
@@ -246,27 +292,26 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		return;
 	}
 	QDataStream stream { &file };
-	char *lmpData = new char();
-	QByteArray bArray( file.size(), 0 );
-	qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
-	lmpData = bArray.data();
-	BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( lmpData );
-	qInfo() << castedLump->m_version;
-	if ( castedLump->m_version != 21 )
-	{
-		QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
-		return;
-	}
-	QString Entities = strstr( lmpData + castedLump->lumps[0].fileOffset, "\0" );
-	if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
-	{
-		m_bspHasPTIInstance = false;
-		QDialog *dialog = new QDialog( this );
-		PTIDialogSetup *PTI = new PTIDialogSetup();
-		PTI->setupUi( dialog );
-		dialog->exec();
-		return;
-	}
+    QByteArray bArray( file.size(), 0 );
+    qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
+    BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( bArray.data() );
+    qInfo() << castedLump->m_version;
+    if ( castedLump->m_version != 21 )
+    {
+        QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
+        return;
+    }
+    QString Entities = bArray.data() + castedLump->lumps[0].fileOffset;
+	qInfo() << Entities;
+    if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
+    {
+        m_bspHasPTIInstance = false;
+        QDialog *dialog = new QDialog( this );
+        PTIDialogSetup *PTI = new PTIDialogSetup();
+        PTI->setupUi( dialog );
+        dialog->exec();
+        return;
+    }
 	m_bspHasPTIInstance = true;
 	pFileEntry->setText( filePath );
 }
@@ -300,25 +345,25 @@ void CP2MapPublisher::onOKPressed()
 		return;
 	}
 	QDataStream stream { &file };
-	char *lmpData = new char();
-	QByteArray bArray( file.size(), 0 );
-	qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
-	lmpData = bArray.data();
-	BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( lmpData );
-	if ( castedLump->m_version != 21 )
-	{
-		QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
-		return;
-	}
-	QString Entities = strstr( lmpData + castedLump->lumps[0].fileOffset, "\0" );
-	if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
-	{
-		QDialog *dialog = new QDialog( this );
-		PTIDialogSetup *PTI = new PTIDialogSetup();
-		PTI->setupUi( dialog );
-		dialog->exec();
-		return;
-	}
+    QByteArray bArray( file.size(), 0 );
+    qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
+    BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( bArray.data() );
+    qInfo() << castedLump->m_version;
+    if ( castedLump->m_version != 21 )
+    {
+        QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
+        return;
+    }
+    QString Entities = bArray.data() + castedLump->lumps[0].fileOffset;
+    if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
+    {
+        m_bspHasPTIInstance = false;
+        QDialog *dialog = new QDialog( this );
+        PTIDialogSetup *PTI = new PTIDialogSetup();
+        PTI->setupUi( dialog );
+        dialog->exec();
+        return;
+    }
 	if ( m_edit )
 		LoadEditItem();
 	else
@@ -333,4 +378,13 @@ void CP2MapPublisher::LoadEditItem()
 void CP2MapPublisher::onClosePressed()
 {
 	this->close();
+}
+
+std::vector<std::string> CP2MapPublisher::splitString(const std::string& input, char delimiter) {
+    std::stringstream ss{input};
+    std::vector<std::string> out;
+    std::string token;
+    while (std::getline(ss, token, delimiter))
+        out.push_back(token);
+    return out;
 }

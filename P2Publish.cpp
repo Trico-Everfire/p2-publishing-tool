@@ -5,17 +5,15 @@
 #include <QIcon>
 #include <QSharedMemory>
 
-// static bool m_setLoaded = false;
-
 int main( int argc, char **argv )
 {
 	QApplication app( argc, argv );
 	app.setWindowIcon( QIcon( ":/zoo_textures/P2 Publisher Icon2.png" ) );
 
-	QFile file(":/dark/stylesheet.qss");
-	file.open(QFile::ReadOnly | QFile::Text);
-	QTextStream stream(&file);
-	app.setStyleSheet(stream.readAll());
+	// QFile file(":/dark/stylesheet.qss");
+	// file.open(QFile::ReadOnly | QFile::Text);
+	// QTextStream stream(&file);
+	// app.setStyleSheet(stream.readAll());
 	// QSharedMemory shared( "qt_Portal_2_Map_Publisher" );
 	// if ( !shared.create(512, QSharedMemory::ReadWrite) )
 	// {

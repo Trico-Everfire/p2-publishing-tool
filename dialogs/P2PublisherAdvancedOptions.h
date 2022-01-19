@@ -29,6 +29,8 @@
 #include <QRegExp>
 #include <QFileDialog>
 #include <QPixmap>
+#include <QDebug>
+#include <QFileInfo>
 
 QT_BEGIN_NAMESPACE
 
@@ -40,8 +42,8 @@ public:
 	QLineEdit *lineEdit;
 	QPushButton *toolButton;
 	QTreeWidget *treeWidget;
-	QPushButton *toolButton_2;
-	QPushButton *toolButton_3;
+	// QPushButton *toolButton_2;
+	// QPushButton *toolButton_3;
 	QPushButton *toolButton_4;
 	QPushButton *toolButton_5;
 	QPushButton *toolButton_6;
@@ -56,7 +58,7 @@ public:
 	QTreeWidget *treeWidget_2;
 	QComboBox *comboBox;
 	QLabel *label_2;
-    std::vector<QString> imageArray;
+    QTreeWidget *ImageTree;
 	QString defaultFileLocIMG = "./";
 
 	void setupUi( QDialog *Advanced )
@@ -83,21 +85,16 @@ public:
 		new QTreeWidgetItem( treeWidget );
 		treeWidget->setObjectName( QString::fromUtf8( "treeWidget" ) );
 		treeWidget->setGeometry( QRect( 20, 220, 231, 131 ) );
-		toolButton_2 = new QPushButton( Advanced );
-		toolButton_2->setObjectName( QString::fromUtf8( "toolButton_2" ) );
-		toolButton_2->setDisabled(true);
-		toolButton_2->setGeometry( QRect( 230, 50, 111, 31 ) );
-		toolButton_3 = new QPushButton( Advanced );
-		toolButton_3->setObjectName( QString::fromUtf8( "toolButton_3" ) );
-		toolButton_3->setGeometry( QRect( 230, 80, 111, 31 ) );
-		toolButton_3->setDisabled(true);
+		ImageTree = new QTreeWidget( Advanced );
+		ImageTree->setGeometry( QRect( 180, 10, 181, 131 ) );
+		ImageTree->setObjectName( QString::fromUtf8( "ImageTree" ) );
 		toolButton_4 = new QPushButton( Advanced );
 		toolButton_4->setObjectName( QString::fromUtf8( "toolButton_4" ) );
-		toolButton_4->setGeometry( QRect( 230, 110, 111, 31 ) );
+		toolButton_4->setGeometry( QRect( 20, 150, 151, 21 ) );
 		toolButton_5 = new QPushButton( Advanced );
 		toolButton_5->setObjectName( QString::fromUtf8( "toolButton_5" ) );
 		toolButton_5->setDisabled(true);
-		toolButton_5->setGeometry( QRect( 230, 140, 111, 31 ) );
+		toolButton_5->setGeometry( QRect( 180, 150, 181, 21 ) );
 		toolButton_7 = new QPushButton( Advanced );
 		toolButton_7->setObjectName( QString::fromUtf8( "toolButton_5" ) );
 		toolButton_7->setGeometry( QRect( 20, 360, 231, 31 ) );
@@ -106,14 +103,14 @@ public:
 		toolButton_8->setGeometry( QRect( 440, 180, 231, 31 ) );
 		label = new QLabel( Advanced );
 		label->setObjectName( QString::fromUtf8( "label" ) );
-		label->setGeometry( QRect( 20, 50, 201, 121 ) );
+		label->setGeometry( QRect( 20, 50, 151, 91 ) );
 		label->setScaledContents( true );
 		label_3 = new QLabel( Advanced );
 		label_3->setObjectName( QString::fromUtf8( "label_3" ) );
 		label_3->setGeometry( QRect( 20, 10, 81, 31 ) );
 		label_4 = new QLabel( Advanced );
 		label_4->setObjectName( QString::fromUtf8( "label_4" ) );
-		label_4->setGeometry( QRect( 360, 10, 81, 31 ) );
+		label_4->setGeometry( QRect( 380, 10, 81, 31 ) );
 		textEdit = new QTextEdit( Advanced );
 		textEdit->setObjectName( QString::fromUtf8( "textEdit" ) );
 		textEdit->setGeometry( QRect( 290, 220, 391, 151 ) );
@@ -135,7 +132,7 @@ public:
 		comboBox->addItem( QString() );
 		comboBox->addItem( QString() ); 
 		comboBox->setObjectName( QString::fromUtf8( "comboBox" ) );
-		comboBox->setGeometry( QRect( 370, 380, 90, 30 ) );
+		comboBox->setGeometry( QRect( 350, 380, 90, 30 ) );
 		label_2 = new QLabel( Advanced );
 		label_2->setObjectName( QString::fromUtf8( "label_2" ) );
 		label_2->setGeometry( QRect( 290, 380, 71, 31 ) );
@@ -194,10 +191,12 @@ public:
             delete treeWidget_2->selectedItems()[0];
             //treeWidget->removeItemWidget(treeWidget->selectedItems()[0],0);
         });
-        QObject::connect(toolButton_4, &QPushButton::pressed, Advanced, [&](){
+
+        QObject::connect( toolButton_4, &QPushButton::pressed, Advanced, [&](){
 			auto opts = QFileDialog::Option::DontUseNativeDialog;
 			QString filePath = QFileDialog::getOpenFileName( nullptr, "Open", defaultFileLocIMG, "*.tga *.bmp *.png *.jpeg", nullptr, opts );
 			if(filePath.isEmpty()) return;
+			defaultFileLocIMG = filePath;
 			QPixmap tempMap = QPixmap( filePath );
 			if(tempMap.isNull()){
 				QMessageBox::warning( nullptr, "Invalid Image", "Could not load the image." );
@@ -205,9 +204,31 @@ public:
 			}
 			tempMap = tempMap.scaled( 201, 121, Qt::IgnoreAspectRatio );
 			label->setPixmap(tempMap);
-			imageArray.push_back(filePath);
-
+			auto item = new QTreeWidgetItem( 0 );
+			QFileInfo fileInfo(filePath);
+            item->setText( 0, fileInfo.fileName() );
+			item->setData(0,Qt::UserRole,filePath);
+			ImageTree->addTopLevelItem(item);
+			ImageTree->clearSelection();
+			item->setSelected(true);
 		});
+		QObject::connect( toolButton_5, &QPushButton::pressed, Advanced, [&](){
+			delete ImageTree->selectedItems()[0];
+		});
+		QObject::connect( ImageTree, &QTreeWidget::itemSelectionChanged, Advanced, [&](){
+			
+			if ( ImageTree->selectedItems().length() == 1 ){
+				QString filePath = ImageTree->selectedItems()[0]->data(0,Qt::UserRole).toString();
+				// qInfo() << ImageTree->selectedItems()[0]->data();
+				QPixmap tempMap = QPixmap( filePath );
+                toolButton_5->setEnabled(true);
+				label->setPixmap(tempMap);
+            } else {
+				label->setPixmap(QPixmap( "" ));
+                toolButton_5->setEnabled(false);
+            }
+        });
+
         QMetaObject::connectSlotsByName( Advanced );
 	} // setupUi
 
@@ -227,8 +248,8 @@ public:
 		___qtreewidgetitem1->setText( 0, QCoreApplication::translate( "Advanced", "Singleplayer", nullptr ) );
 		___qtreewidgetitem1->setDisabled( true );
 
-		toolButton_2->setText( QCoreApplication::translate( "Advanced", "Up", nullptr ) );
-		toolButton_3->setText( QCoreApplication::translate( "Advanced", "Down", nullptr ) );
+		//toolButton_2->setText( QCoreApplication::translate( "Advanced", "Up", nullptr ) );
+		//toolButton_3->setText( QCoreApplication::translate( "Advanced", "Down", nullptr ) );
 		toolButton_4->setText( QCoreApplication::translate( "Advanced", "Add", nullptr ) );
 		toolButton_5->setText( QCoreApplication::translate( "Advanced", "Remove", nullptr ) );
 		toolButton_7->setText( QCoreApplication::translate( "Advanced", "Remove Tag", nullptr ) );
@@ -236,18 +257,19 @@ public:
         toolButton_8->setText( QCoreApplication::translate( "Advanced", "Remove Video", nullptr ) );
 		toolButton_8->setDisabled( true );
 		label->setText( QString() );
-		label_3->setText( QCoreApplication::translate( "Advanced", "<html><head/><body><p><span style=\" font-size:16pt;\">Images</span></p></body></html>", nullptr ) );
-		label_4->setText( QCoreApplication::translate( "Advanced", "<html><head/><body><p><span style=\" font-size:16pt;\">Videos</span></p></body></html>", nullptr ) );
-		label_5->setText( QCoreApplication::translate( "Advanced", "<html><head/><body><p><span style=\" font-size:16pt;\">Patch Notes:</span></p></body></html>", nullptr ) );
+		label_3->setText( QCoreApplication::translate( "Advanced", "Images", nullptr ) );
+		label_4->setText( QCoreApplication::translate( "Advanced", "Videos", nullptr ) );
+		label_5->setText( QCoreApplication::translate( "Advanced", "Patch Notes", nullptr ) );
 		toolButton_6->setText( QCoreApplication::translate( "Advanced", "Add Video", nullptr ) );
 		QTreeWidgetItem *___qtreewidgetitem2 = treeWidget_2->headerItem();
-		___qtreewidgetitem2->setText( 0, QCoreApplication::translate( "Advanced", "Video Link", nullptr ) );
+		___qtreewidgetitem2->setText( 0, QCoreApplication::translate( "Advanced", "Video Handles", nullptr ) );
 		comboBox->setItemText( 0, QCoreApplication::translate( "Advanced", "public", nullptr ) );
 		comboBox->setItemText( 1, QCoreApplication::translate( "Advanced", "private", nullptr ) );
 		comboBox->setItemText( 2, QCoreApplication::translate( "Advanced", "friends", nullptr ) );
 		comboBox->setItemText( 3, QCoreApplication::translate( "Advanced", "unlisted", nullptr ) );
-
-		label_2->setText( QCoreApplication::translate( "Advanced", "<html><head/><body><p><span style=\" font-size:12pt;\">Visibility:</span></p></body></html>", nullptr ) );
+				QTreeWidgetItem *___qtreewidgetitemImage = ImageTree->headerItem();
+		___qtreewidgetitemImage->setText( 0, QCoreApplication::translate( "Advanced", "Images", nullptr ) );
+		label_2->setText( QCoreApplication::translate( "Advanced", "Visibility:", nullptr ) );
 		Advanced->setFixedSize( 700, 442 );
 	} // retranslateUi
 };
