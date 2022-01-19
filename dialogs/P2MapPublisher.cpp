@@ -195,6 +195,7 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 	m_CallOldApiResultSubmitItemDownload.Set( res, this, &CP2MapPublisher::OnOldApiSubmitItemDownload );
 	StartLoopCall();
 	UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published, k_EUGCMatchingUGCType_Items_ReadyToUse, k_EUserUGCListSortOrder_CreationOrderDesc, SteamUtils()->GetAppID(), CP2MapMainMenu::ConsumerID, 1 );
+	SteamUGC()->SetReturnAdditionalPreviews(hQueryResult,true);
 	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
 	m_CallResultSendQueryUGCRequest.Set( hApiQueryHandle, this, &CP2MapPublisher::OnSendQueryUGCRequest );
 	StartLoopCall();
@@ -208,15 +209,16 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 	
 	SteamUGCDetails_t pDetails{};
 	SteamUGC()->GetQueryUGCResult( pQuery->m_handle, m_EditItemIndex, &pDetails );
-	qInfo() << pDetails.m_rgchTitle;
+	//qInfo() << pDetails.m_flScore;
 
 	uint32 itemCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews(pQuery->m_handle, m_EditItemIndex);
 	qInfo() << itemCount;
 	for(int i = 0; i < itemCount; i++){
 		int a = 0,b = 0;
-		char img{},vid{};
+		char* img{};
+		char vid{};
 		EItemPreviewType type{};
-		SteamUGC()->GetQueryUGCAdditionalPreview(pQuery->m_handle,m_EditItemIndex,i,&vid,a,&img,b,&type);
+		qInfo() << SteamUGC()->GetQueryUGCAdditionalPreview(pQuery->m_handle,m_EditItemIndex,i,&vid,a,img,b,&type);
 		if(type == k_EItemPreviewType_Image){
 				auto item = new QTreeWidgetItem( 0 );
 				item->setText( 0, QString( img ) );
