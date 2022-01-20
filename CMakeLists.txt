@@ -34,10 +34,6 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-
-
-
-
 set(SRC
 	# Dialogs
 	dialogs/P2MapPublisher.h

@@ -63,6 +63,7 @@ public:
 	QLabel *label_2;
     QTreeWidget *ImageTree;
 	QString defaultFileLocIMG = "./";
+	std::vector<QByteArray> AdditionalImageArray;
 
 	void setupUi( QDialog *Advanced )
 	{
@@ -224,22 +225,10 @@ public:
 				QString filePath = ImageTree->selectedItems()[0]->data(0,Qt::UserRole).toString();
 				QPixmap tempMap;
 				if(filePath.startsWith("https://steamuserimages-a.akamaihd.net/ugc/")){
-					qInfo() << filePath;
-					QNetworkAccessManager manager{};
-
-					QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(filePath)));
-
-					QEventLoop loop;
-					QObject::connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
-					QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
-					loop.exec();
-
-					QByteArray bts = reply->readAll();
-					// qInfo() << bts;
-					delete reply;
-
+					int index = ImageTree->selectedItems()[0]->data(1,Qt::UserRole).toInt();
 					tempMap = QPixmap();
-					tempMap.loadFromData(bts);
+					tempMap.loadFromData(AdditionalImageArray[index]);
+
 				} else {
 					tempMap = QPixmap( filePath );
 					toolButton_5->setEnabled(true);

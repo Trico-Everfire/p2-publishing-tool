@@ -19,6 +19,9 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QUrl>
+#include <QtNetwork/QNetworkReply>
 #include <sstream>
 
 

@@ -114,10 +114,11 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 
 	if ( !defaultFileLocBSP.startsWith( "mymaps/" ) )
 	{
-		PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( itemID );
-		SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, "///home/trico/Documents/test_bsp_upload/mymaps/wall_button_old_aperture.bsp" );
-		SteamAPICall_t call = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
-		m_CallOldApiResultSubmitItemUpdate.Set( call, this, &CP2MapPublisher::OnOldApiSubmitItemUpdate );
+		qInfo() << defaultFileLocBSP.toStdString().c_str();
+		// PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( itemID );
+		// SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, defaultFileLocBSP.toStdString().c_str() );
+		// SteamAPICall_t call = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
+		// m_CallOldApiResultSubmitItemUpdate.Set( call, this, &CP2MapPublisher::OnOldApiSubmitItemUpdate );
 	}
 	UGCUpdateHandle_t hUpdateHandle = SteamUGC()->StartItemUpdate( CP2MapMainMenu::ConsumerID, itemID );
 
@@ -133,24 +134,56 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 	{
 		case 0:
 			visibility = k_ERemoteStoragePublishedFileVisibilityPublic;
-			return;
+			break;
 		case 1:
 			visibility = k_ERemoteStoragePublishedFileVisibilityPrivate;
-			return;
+			break;
 		case 2:
 			visibility = k_ERemoteStoragePublishedFileVisibilityFriendsOnly;
-			return;
+			break;
 		case 3:
 			visibility = k_ERemoteStoragePublishedFileVisibilityUnlisted;
-			return;
+			break;
 		default:
 			visibility = k_ERemoteStoragePublishedFileVisibilityPublic;
-			return;
+			break;
 	}
 	bool bVisibilityResult = SteamUGC()->SetItemVisibility( hUpdateHandle, visibility );
 
-	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, "Test from application" );
+	std::string descr;
+	if(m_edit && !AO->textEdit->toPlainText().isEmpty()){
+		descr = AO->textEdit->toPlainText().toStdString();
+	}
+	qInfo() << "Passed";
+	SteamParamStringArray_t tags{};
+	QTreeWidgetItemIterator iterator(AO->treeWidget);
+    int index = 0;
+	while (*iterator) {
+			index++;
+            //(*iterator)->text(0);
+        ++iterator;
+    }
+	// tags.m_ppStrings = new const char*[index];
+	int nIndex = 0;
+	qInfo() << "Passed 2";
+
+	std::vector<const char*> charray;
+	QTreeWidgetItemIterator iterator2(AO->treeWidget);
+	while (*iterator2) {
+		qInfo() << (*iterator2)->text(0);
+        charray.push_back( (*iterator2)->text(0).toStdString().c_str() );
+		nIndex++;
+        ++iterator2;
+    }
+	tags.m_nNumStrings = charray.size();
+	tags.m_ppStrings = charray.data();
+	SteamUGC()->SetItemTags(hUpdateHandle,&tags);
+	qInfo() << "Passed 3";
+	//for()
+	//UpdatePublishedFileTags
+	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, descr.empty() ? nullptr : descr.c_str() );
 	m_CallResultSubmitItemUpdate.Set( hApiSubmitItemHandle, this, &CP2MapPublisher::OnSubmitItemUpdate );
+
 }
 
 void CP2MapPublisher::OnCreateItem( CreateItemResult_t *pItem, bool bFailure )
@@ -180,6 +213,26 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 	pFileEntry->setText( details.m_pchFileName );
 	pTitleLine->setText( details.m_rgchTitle );
 	pDescLine->setText( details.m_rgchDescription );
+
+	switch ( details.m_eVisibility )
+	{
+		case k_ERemoteStoragePublishedFileVisibilityPublic:
+			AO->comboBox->setCurrentIndex(0);
+			break;
+		case k_ERemoteStoragePublishedFileVisibilityPrivate:
+			AO->comboBox->setCurrentIndex(1);
+			break;
+		case k_ERemoteStoragePublishedFileVisibilityFriendsOnly:
+			AO->comboBox->setCurrentIndex(2);
+			break;
+		case k_ERemoteStoragePublishedFileVisibilityUnlisted:
+			AO->comboBox->setCurrentIndex(3);
+			break;
+		default:
+			AO->comboBox->setCurrentIndex(0);
+			break;
+	}
+
 	m_EditItemIndex = index;
 
 	std::vector<std::string> vector = splitString(details.m_rgchTags,',');
@@ -212,13 +265,11 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
     //qInfo() << pDetails.m_flScore;
 
     uint32 iCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews( pQuery->m_handle, m_EditItemIndex );
-
+	int imageIndex = 0;
     for ( uint32 i = 0; i < iCount; i++ )
     {
         const uint iUrlSize = 2000;
         char pchUrl[iUrlSize];
-		// const uint iUrl2Size = 20000;
-		// char pchFileURL[iUrl2Size];
         const uint iFileSize = 2000;
         char pchFileName[iFileSize];
         EItemPreviewType pType;
@@ -227,21 +278,33 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
                                                   pchUrl, iUrlSize, pchFileName,
                                                   iFileSize, &pType );
         QTreeWidgetItem *pItem = new QTreeWidgetItem( 0 );
-        switch ( pType )
-        {
-            case k_EItemPreviewType_Image:
-				// SteamUGC()->GetQueryUGCPreviewURL( pQuery->m_handle, i, pchFileURL, iUrl2Size );
-				// qInfo() << pchFileURL;
-				pItem->setText( 0, QString( pchFileName ) );
-				pItem->setData(0,Qt::UserRole, pchUrl);
-                AO->ImageTree->addTopLevelItem( pItem );
-                break;
 
-            case k_EItemPreviewType_YouTubeVideo:
+		if(pType == k_EItemPreviewType_Image){
+
+				QNetworkAccessManager manager;
+				QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(pchUrl)));
+				QEventLoop loop;
+				QObject::connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+				QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
+				loop.exec();
+				
+				if(imageIndex != 0 ) { //the first image is skipped, from being added as it's the thumbnail image, but still needs to be added to the array.
+					pItem->setText( 0, QString( pchFileName ) );
+					pItem->setData(0,Qt::UserRole, pchUrl);
+					pItem->setData(1,Qt::UserRole, imageIndex);
+					AO->ImageTree->addTopLevelItem( pItem );
+				};
+
+				AO->AdditionalImageArray.push_back(reply->readAll());
+				delete reply;
+				imageIndex++;
+		}
+		if(pType == k_EItemPreviewType_YouTubeVideo){
 				pItem->setText( 0, QString( pchUrl ) );
                 AO->treeWidget_2->addTopLevelItem( pItem );
                 break;
-        }
+		}
+
     }
 
     FinishLoopCall();
@@ -317,7 +380,6 @@ void CP2MapPublisher::OpenBSPFileExplorer()
         return;
     }
     QString Entities = bArray.data() + castedLump->lumps[0].fileOffset;
-	qInfo() << Entities;
     if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
     {
         m_bspHasPTIInstance = false;
