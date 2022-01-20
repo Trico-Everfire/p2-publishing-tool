@@ -154,31 +154,22 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 	if(m_edit && !AO->textEdit->toPlainText().isEmpty()){
 		descr = AO->textEdit->toPlainText().toStdString();
 	}
-	qInfo() << "Passed";
-	SteamParamStringArray_t tags{};
-	QTreeWidgetItemIterator iterator(AO->treeWidget);
-    int index = 0;
-	while (*iterator) {
-			index++;
-            //(*iterator)->text(0);
-        ++iterator;
-    }
-	// tags.m_ppStrings = new const char*[index];
-	int nIndex = 0;
-	qInfo() << "Passed 2";
 
-	std::vector<const char*> charray;
+	SteamParamStringArray_t tags{};
+
+	std::vector<char*> charray;
 	QTreeWidgetItemIterator iterator2(AO->treeWidget);
 	while (*iterator2) {
 		qInfo() << (*iterator2)->text(0);
-        charray.push_back( (*iterator2)->text(0).toStdString().c_str() );
-		nIndex++;
+        charray.push_back( strdup((*iterator2)->text(0).toStdString().c_str()) );
         ++iterator2;
     }
 	tags.m_nNumStrings = charray.size();
-	tags.m_ppStrings = charray.data();
+	tags.m_ppStrings = (const char**) charray.data();
+
 	SteamUGC()->SetItemTags(hUpdateHandle,&tags);
-	qInfo() << "Passed 3";
+	for(auto& str : charray)
+    free(str);
 	//for()
 	//UpdatePublishedFileTags
 	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, descr.empty() ? nullptr : descr.c_str() );
