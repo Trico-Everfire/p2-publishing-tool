@@ -19,6 +19,8 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QBuffer>
+#include <QImageReader>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QUrl>
 #include <QtNetwork/QNetworkReply>
@@ -51,6 +53,7 @@ namespace ui
 		void LoadCreatingItem();
 		void UpdateItem( PublishedFileId_t itemID );
 		void LoadEditItem();
+		uint32 iCount = 0;
 		std::vector<std::string> splitString(const std::string& input, char delimiter);
 
 		// Every callback starts with the type sent and a bool

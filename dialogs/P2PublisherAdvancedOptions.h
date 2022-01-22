@@ -198,7 +198,7 @@ public:
 
         QObject::connect( toolButton_4, &QPushButton::pressed, Advanced, [&](){
 			auto opts = QFileDialog::Option::DontUseNativeDialog;
-			QString filePath = QFileDialog::getOpenFileName( nullptr, "Open", defaultFileLocIMG, "*.tga *.bmp *.png *.jpeg", nullptr, opts );
+			QString filePath = QFileDialog::getOpenFileName( nullptr, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, opts );
 			if(filePath.isEmpty()) return;
 			defaultFileLocIMG = filePath;
 			QPixmap tempMap = QPixmap( filePath );
@@ -228,7 +228,6 @@ public:
 					int index = ImageTree->selectedItems()[0]->data(1,Qt::UserRole).toInt();
 					tempMap = QPixmap();
 					tempMap.loadFromData(AdditionalImageArray[index]);
-
 				} else {
 					tempMap = QPixmap( filePath );
 					toolButton_5->setEnabled(true);
