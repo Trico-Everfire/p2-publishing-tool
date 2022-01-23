@@ -21,6 +21,7 @@ CP2MapPublisher::CP2MapPublisher( QWidget *pParent, bool edit ) :
 	m_pPreviewImage = &tempMap;
 	pImageLabel = new QLabel( this );
 	pImageLabel->setPixmap( *m_pPreviewImage );
+	pImageLabel->setMaximumSize(239.25, 134.75);
 	m_advancedOptionsWindow = new QDialog( this );
 	AO = new CP2PublisherAdvancedOptions();
 	AO->setupUi( m_advancedOptionsWindow );
@@ -140,11 +141,27 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		qInfo() << SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle );
 
 		PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( itemID );
-
 		SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, (QString("mymaps/") + info.fileName()).toStdString().c_str() );
 		
-		SteamRemoteStorage()->UpdatePublishedFilePreviewFile(old_API_Handle, defaultFileLocIMG.toStdString().c_str());
-		
+
+		// QFile file2(defaultFileLocIMG);
+		// QFileInfo info2(defaultFileLocIMG);
+		// if(!file2.exists()) {
+		// 	qInfo() << "File does not exist!";
+		// };
+		// file2.open(QFile::ReadOnly);
+		// if(file2.size() > 104857600){
+		// 	qInfo() << "File too large!";
+		// }
+
+		// if(file2.size() <= 104857600 && file2.exists()) {
+		// 	UGCFileWriteStreamHandle_t filewritestreamhandle2 = SteamRemoteStorage()->FileWriteStreamOpen( (QString("myimgs/") + info2.fileName()).toStdString().c_str() );
+		// 	QByteArray data2 = file2.readAll();
+		// 	qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle2, data2.constData(), data2.size());
+		// 	qInfo() << SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle2 );
+		// 	SteamRemoteStorage()->UpdatePublishedFilePreviewFile(old_API_Handle, (QString("myimgs/") + info2.fileName()).toStdString().c_str());
+		// };
+
 		SteamAPICall_t call = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
 		m_CallOldApiResultSubmitItemUpdate.Set( call, this, &CP2MapPublisher::OnOldApiSubmitItemUpdate );
 
@@ -156,7 +173,7 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 
 	if ( !pDescLine->toPlainText().isEmpty() )
 		if ( !m_edit || ( m_edit && QString( m_editItemDetails.m_rgchDescription ).compare( pDescLine->toPlainText() ) ) )
-			bool bDescResult = SteamUGC()->SetItemDescription( hUpdateHandle, "This was a test from an uploader program a friend wrote" );
+			bool bDescResult = SteamUGC()->SetItemDescription( hUpdateHandle, pDescLine->toPlainText().toStdString().c_str() );
 
 	ERemoteStoragePublishedFileVisibility visibility; // AO->checkBox->isChecked() ? k_ERemoteStoragePublishedFileVisibilityPrivate : k_ERemoteStoragePublishedFileVisibilityPublic;
 	switch ( AO->comboBox->currentIndex() )
@@ -197,6 +214,7 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 	tags.m_ppStrings = (const char**) charray.data();
 
 	SteamUGC()->SetItemTags(hUpdateHandle,&tags);
+	
 	for(auto& str : charray)
     free(str);
 
@@ -204,7 +222,7 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		SteamUGC()->RemoveItemPreview( hUpdateHandle, ind );
 	}
 
-	//SteamUGC()->SetItemPreview(hUpdateHandle,defaultFileLocIMG.toStdString().c_str());
+	SteamUGC()->SetItemPreview(hUpdateHandle,defaultFileLocIMG.toStdString().c_str());
 
 	QTreeWidgetItemIterator iterator3(AO->ImageTree);
 	while (*iterator3) {
@@ -212,7 +230,6 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		if((*iterator3)->data(0,Qt::UserRole).toString().contains("https://steamuserimages-a.akamaihd.net/ugc/")){			
 			QImage image = QImage();
 			int imageLoc = (*iterator3)->data(1,Qt::UserRole).toInt();
-			qInfo() << AO->AdditionalImageArray[imageLoc];
 			image.fromData(AO->AdditionalImageArray[imageLoc]);
 			image.save("./resources/AdditionImage"+QString(std::to_string(imageLoc).c_str())+".jpg");
 			SteamUGC()->AddItemPreviewFile(hUpdateHandle,("./resources/AdditionImage"+QString(std::to_string(imageLoc).c_str())+".jpg").toStdString().c_str(),k_EItemPreviewType_Image);
@@ -224,10 +241,10 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 	
 	// SteamUGC()->AddItemPreviewFile
 
-
+	qInfo() << "Reached Upadte Handle";
 	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, descr.empty() ? nullptr : descr.c_str() );
 	m_CallResultSubmitItemUpdate.Set( hApiSubmitItemHandle, this, &CP2MapPublisher::OnSubmitItemUpdate );
-
+	StartLoopCall();
 }
 
 void CP2MapPublisher::OnCreateItem( CreateItemResult_t *pItem, bool bFailure )
@@ -243,6 +260,7 @@ void CP2MapPublisher::OnCreateItem( CreateItemResult_t *pItem, bool bFailure )
 
 void CP2MapPublisher::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool bFailure )
 {
+	qInfo() << bFailure;
 	FinishLoopCall();
 }
 
@@ -257,6 +275,7 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 	pFileEntry->setText( details.m_pchFileName );
 	pTitleLine->setText( details.m_rgchTitle );
 	pDescLine->setText( details.m_rgchDescription );
+	defaultFileLocBSP = details.m_pchFileName;
 
 	switch ( details.m_eVisibility )
 	{
@@ -332,25 +351,18 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 				QObject::connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
 				QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
 				loop.exec();
-				qInfo() << pchUrl;
-				//if(imageIndex != 0 ) { //the first image is skipped, from being added as it's the thumbnail image, but still needs to be added to the array.
 				pItem->setText( 0, QString( pchFileName ) );
-					// qInfo() << pchUrl;
 				pItem->setData(0,Qt::UserRole, pchUrl);
 				pItem->setData(1,Qt::UserRole, imageIndex);
 				AO->ImageTree->addTopLevelItem( pItem );
-				//};
 
 				QImage image;
-				qInfo() << "Loading Image...";
-				QByteArray ba;
 				image.loadFromData(reply->readAll());
+				QByteArray ba;
         		QBuffer buffer(&ba);
         		buffer.open(QIODevice::ReadWrite);
-				image.save(&buffer,nullptr,1);
-				qInfo() << reply->readAll();
-
-				// QImageReader reader(reply, &ba);
+				image.scaled(1914,1078,Qt::KeepAspectRatio);
+				image.save(&buffer,"JPG");
 				AO->AdditionalImageArray.push_back(ba);
 
 				delete reply;
@@ -452,6 +464,7 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 
 void CP2MapPublisher::onOKPressed()
 {
+
 	if ( !defaultFileLocBSP.endsWith( ".bsp" ) )
 	{
 		QMessageBox::warning( this, "No Map Found!", "You don't have a BSP selected! Please select a valid BSP", QMessageBox::Ok );
@@ -498,6 +511,7 @@ void CP2MapPublisher::onOKPressed()
         dialog->exec();
         return;
     }
+	
 	if ( m_edit )
 		LoadEditItem();
 	else
