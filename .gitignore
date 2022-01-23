@@ -9,6 +9,9 @@ libs/Qt/**
 
 
 # CMake with Visual Studio
+tags
+*.workspace
+.codelite
 .vs/
 .vscode/
 CMakeFiles/
