@@ -63,7 +63,6 @@ public:
 	QLabel *label_2;
     QTreeWidget *ImageTree;
 	QString defaultFileLocIMG = "./";
-	std::vector<QByteArray> AdditionalImageArray;
 
 	void setupUi( QDialog *Advanced )
 	{
@@ -224,15 +223,8 @@ public:
 			if ( ImageTree->selectedItems().length() == 1 ){
 				QString filePath = ImageTree->selectedItems()[0]->data(0,Qt::UserRole).toString();
 				QPixmap tempMap;
-				if(filePath.startsWith("https://steamuserimages-a.akamaihd.net/ugc/")){
-					int index = ImageTree->selectedItems()[0]->data(1,Qt::UserRole).toInt();
-					tempMap = QPixmap();
-					tempMap.loadFromData(AdditionalImageArray[index]);
-				} else {
-					tempMap = QPixmap( filePath );
-					toolButton_5->setEnabled(true);
-				}
-				// qInfo() << ImageTree->selectedItems()[0]->data();
+				tempMap = QPixmap( filePath );
+				toolButton_5->setEnabled(true);
 				label->setPixmap(tempMap);
             } else {
 				label->setPixmap(QPixmap( "" ));

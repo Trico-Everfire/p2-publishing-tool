@@ -72,6 +72,9 @@ namespace ui
 		void OnOldApiSubmitItemDownload( RemoteStorageDownloadUGCResult_t *pItem, bool pFailure );
 		CCallResult<CP2MapPublisher, RemoteStorageDownloadUGCResult_t> m_CallOldApiResultSubmitItemDownload;
 
+		void RefreshItems(SteamUGCQueryCompleted_t * pItem, bool bFailed);
+		CCallResult<CP2MapPublisher, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
+
 	private:
 		SteamUGCDetails_t m_editItemDetails;
 		CP2PublisherAdvancedOptions *AO;

@@ -71,7 +71,7 @@ CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) :
 	pDialogLayout->addWidget( pEditButton, 2, 10, 10, 1, Qt::AlignTop );
 	pDialogLayout->addWidget( pRefreshButton, 3, 10, 10, 1, Qt::AlignTop );
 
-	pDialogLayout->addWidget( timezoneLabel, 11, 0, 1, 11 );
+	pDialogLayout->addWidget( timezoneLabel, 11, 0, 1, 1 );
 	pDialogLayout->addWidget( m_timezoneComboBox, 11, 1, Qt::AlignLeft );
 
 	this->setLayout( pDialogLayout );
@@ -134,9 +134,17 @@ void CP2MapMainMenu::onDeletePressed()
 		QTreeWidgetItem *item = widget->selectedItems()[0];
 		int itemIndex = item->data( 1, Qt::UserRole ).toInt();
 		SteamUGCDetails_t Details = SUGCD.at( itemIndex );
-		SteamUGC()->DeleteItem( Details.m_nPublishedFileId );
-		onRefreshPressed();
+		SteamAPICall_t call = SteamUGC()->DeleteItem( Details.m_nPublishedFileId );
+		m_CallResultDeleteItem.Set(call,this, &CP2MapMainMenu::OnDeleteItem);
+		StartLoopCall();
+		
 	}
+}
+
+void CP2MapMainMenu::OnDeleteItem(DeleteItemResult_t *pItem, bool bFailure)
+{
+	//FinishLoopCall();
+	onRefreshPressed();
 }
 
 void CP2MapMainMenu::OnOldApiSubmitItemUpdate( RemoteStorageUpdatePublishedFileResult_t *pItem, bool pFailure )

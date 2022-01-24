@@ -27,15 +27,15 @@ namespace ui
 		~CP2MapMainMenu();
 		std::map<int, SteamUGCDetails_t> SUGCD;
 		static const AppId_t ConsumerID = 620;
+		void runSetCallbacks();
+		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
 
 	private:
-		void runSetCallbacks();
 		QPushButton *pEditButton;
 		QPushButton *pDeleteButton;
 		QString unixTimeToHumanReadable( uint32 seconds );
 		QTreeWidget *m_treeWidget;
 		QComboBox *m_timezoneComboBox;
-		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
 		CCallResult<CP2MapMainMenu, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
 		void OnDeleteItem( DeleteItemResult_t *pItem, bool bFailure );
 		CCallResult<CP2MapMainMenu, DeleteItemResult_t> m_CallResultDeleteItem;
