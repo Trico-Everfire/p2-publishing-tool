@@ -28,6 +28,7 @@ elseif(WIN32)
 	endif()
 endif()	
 
+
 message("Using ${QT_INCLUDE} as our Qt include dir")
 
 set(CMAKE_AUTOMOC ON)
