@@ -280,6 +280,7 @@ void CP2MapMainMenu::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bo
 	}
 
 	totalLoadedItems.clear();
+	SUGCD.clear();
 	// Loop through all our items
 	for ( int index = 0; index < pQuery->m_unNumResultsReturned; index++ )
 	{

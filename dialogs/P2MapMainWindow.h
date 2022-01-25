@@ -29,12 +29,11 @@ namespace ui
 		static const AppId_t ConsumerID = 620;
 		void runSetCallbacks();
 		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
-
+		QTreeWidget *m_treeWidget;
 	private:
 		QPushButton *pEditButton;
 		QPushButton *pDeleteButton;
 		QString unixTimeToHumanReadable( uint32 seconds );
-		QTreeWidget *m_treeWidget;
 		QComboBox *m_timezoneComboBox;
 		CCallResult<CP2MapMainMenu, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
 		void OnDeleteItem( DeleteItemResult_t *pItem, bool bFailure );

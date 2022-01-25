@@ -239,9 +239,9 @@ void CP2MapPublisher::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool 
 	qInfo() << bFailure;
 	qInfo() << pItem->m_eResult;
 
-	UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published, k_EUGCMatchingUGCType_Items_ReadyToUse, k_EUserUGCListSortOrder_CreationOrderDesc, SteamUtils()->GetAppID(), CP2MapMainMenu::ConsumerID, 1 );
-	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
-	m_SteamCallResultUGCRequest.Set(hApiQueryHandle, this, &CP2MapPublisher::RefreshItems);
+	// UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published, k_EUGCMatchingUGCType_Items_ReadyToUse, k_EUserUGCListSortOrder_CreationOrderDesc, SteamUtils()->GetAppID(), CP2MapMainMenu::ConsumerID, 1 );
+	// SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
+	// m_SteamCallResultUGCRequest.Set(hApiQueryHandle, this, &CP2MapPublisher::RefreshItems);
 
 	FinishLoopCall();
 	this->close();
@@ -250,8 +250,8 @@ void CP2MapPublisher::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool 
 void CP2MapPublisher::RefreshItems(SteamUGCQueryCompleted_t * pItem, bool bFailed)
 {
 	CP2MapMainMenu* menu = reinterpret_cast<CP2MapMainMenu*>(parent());
-	FinishLoopCall();
 	menu->OnSendQueryUGCRequest(pItem,bFailed);
+	menu->m_treeWidget->clear();
 	FinishLoopCall();
 }
 
