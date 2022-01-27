@@ -117,19 +117,19 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 			return;
 		};
 		file.open( QFile::ReadOnly );
-		if ( file.size() > 209715200 )
+		if ( file.size() > 2097152 )
 		{
 			qInfo() << "File too large!";
 			return;
 		}
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
-		if ( file.size() > 104857600 )
+		if ( file.size() > 1048576 )
 		{
 			QByteArray data = file.readAll();
-			QByteArray first = data.left( 104857600 );				 // gets the first 100mb.
-			QByteArray rest = data.right( data.size() - 104857600 ); // gets the rest.
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, first.constData(), 104857600 );
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, rest.constData(), data.size() - 104857600 );
+			QByteArray first = data.left( 1048576 );				 // gets the first 100mb.
+			QByteArray rest = data.right( data.size() - 1048576 ); // gets the rest.
+			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, first.constData(), 1048576 );
+			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, rest.constData(), data.size() - 1048576 );
 		}
 		else
 		{
@@ -208,10 +208,18 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		qInfo() << SteamUGC()->SetItemPreview( hUpdateHandle, defaultFileLocIMG.toStdString().c_str() );
 	}
 
-	QTreeWidgetItemIterator iterator3( AO->ImageTree );
+	QTreeWidgetItemIterator iterator4( AO->ImageTree );
+	while ( *iterator4 )
+	{
+		qInfo() << SteamUGC()->AddItemPreviewFile( hUpdateHandle, ( ( *iterator4 )->data( 0, Qt::UserRole ).toString() ).toStdString().c_str(), k_EItemPreviewType_Image );
+		++iterator4;
+	}
+
+	QTreeWidgetItemIterator iterator3( AO->treeWidget_2 );
 	while ( *iterator3 )
 	{
-		qInfo() << SteamUGC()->AddItemPreviewFile( hUpdateHandle, ( ( *iterator3 )->data( 0, Qt::UserRole ).toString() ).toStdString().c_str(), k_EItemPreviewType_Image );
+		qInfo() << ( *iterator3 )->text( 0 );
+		SteamUGC()->AddItemPreviewVideo(hUpdateHandle, ( *iterator3 )->text( 0 ).toStdString().c_str());
 		++iterator3;
 	}
 
@@ -430,7 +438,8 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		QMessageBox::warning( this, "File Not Available!", "This BSP is not available, could not be read..." );
 		return;
 	}
-	if ( file.size() > 209715200 )
+	
+	if ( file.size() > 2097152 )
 	{
 		QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
 		return;
@@ -468,9 +477,16 @@ void CP2MapPublisher::onOKPressed()
 		return;
 	}
 
-	if ( !m_edit && ( defaultFileLocIMG == "./" || !QFile::exists( defaultFileLocIMG ) ) )
+	if ( !m_edit && ( defaultFileLocIMG == "./" || !QFile::exists( defaultFileLocIMG )) )
 	{
 		QMessageBox::warning( this, "Preview Image Required!", "You don't have a Preview Image, please insert a Preview Image", QMessageBox::Ok );
+		return;
+	}
+
+	QFileInfo info(defaultFileLocIMG);
+	qInfo() << info.size();
+	if(info.size() > 1048576){
+		QMessageBox::warning( this, "Image File Size Too Big", "This uploader is in Alpha and does not yet support dynamic image compression, therefor images can only be uploaded under 1MB.", QMessageBox::Ok );
 		return;
 	}
 
@@ -480,47 +496,51 @@ void CP2MapPublisher::onOKPressed()
 		return;
 	}
 
-	if ( !defaultFileLocBSP.endsWith( ".bsp" ) )
-	{
-		QMessageBox::warning( this, "No Map Found!", "You don't have a BSP selected! Please select a valid BSP", QMessageBox::Ok );
-		return;
-	}
+	if(!m_edit || (m_edit && defaultFileLocBSP.startsWith("mymaps/"))){
+		if ( !defaultFileLocBSP.endsWith( ".bsp" ) )
+		{
+			QMessageBox::warning( this, "No Map Found!", "You don't have a BSP selected! Please select a valid BSP", QMessageBox::Ok );
+			return;
+		}
 
-	QMessageBox::StandardButton reply = QMessageBox::question( this, "Upload Map?", "Are you sure you want to upload " + defaultFileLocBSP + "?", QMessageBox::Yes | QMessageBox::No );
-	if ( reply != QMessageBox::Yes )
-	{
-		return;
-	}
-	QFile file( defaultFileLocBSP );
-	if ( !file.open( QIODevice::ReadOnly ) )
-	{
-		QMessageBox::warning( this, "File Not Available!", "This BSP is not available, could not be read..." );
-		return;
-	}
-	if ( file.size() > 209715200 )
-	{
-		QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
-		return;
-	}
-	QDataStream stream { &file };
-	QByteArray bArray( file.size(), 0 );
-	qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
-	BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( bArray.data() );
-	qInfo() << castedLump->m_version;
-	if ( castedLump->m_version != 21 )
-	{
-		QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
-		return;
-	}
-	QString Entities = bArray.data() + castedLump->lumps[0].fileOffset;
-	if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
-	{
-		m_bspHasPTIInstance = false;
-		QDialog *dialog = new QDialog( this );
-		PTIDialogSetup *PTI = new PTIDialogSetup();
-		PTI->setupUi( dialog );
-		dialog->exec();
-		return;
+		QMessageBox::StandardButton reply = QMessageBox::question( this, "Upload Map?", "Are you sure you want to upload " + defaultFileLocBSP + "?", QMessageBox::Yes | QMessageBox::No );
+		if ( reply != QMessageBox::Yes )
+		{
+			return;
+		}
+
+		QFile file( defaultFileLocBSP );
+		if ( !file.open( QIODevice::ReadOnly ) )
+		{
+			QMessageBox::warning( this, "File Not Available!", "This BSP is not available, could not be read..." );
+			return;
+		}
+		if ( file.size() > 2097152 )
+		{
+			QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
+			return;
+		}
+		QDataStream stream { &file };
+		QByteArray bArray( file.size(), 0 );
+		qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
+		BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( bArray.data() );
+		qInfo() << castedLump->m_version;
+		if ( castedLump->m_version != 21 )
+		{
+			QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
+			return;
+		}
+		QString Entities = bArray.data() + castedLump->lumps[0].fileOffset;
+		if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
+		{
+			m_bspHasPTIInstance = false;
+			QDialog *dialog = new QDialog( this );
+			PTIDialogSetup *PTI = new PTIDialogSetup();
+			PTI->setupUi( dialog );
+			dialog->exec();
+			return;
+		}
+
 	}
 
 	if ( m_edit )

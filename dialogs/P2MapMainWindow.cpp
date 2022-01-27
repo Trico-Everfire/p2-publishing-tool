@@ -155,51 +155,6 @@ void CP2MapMainMenu::OnOldApiSubmitItemUpdate( RemoteStorageUpdatePublishedFileR
 
 void CP2MapMainMenu::onEditPressed()
 {
-	// QFile file("/home/trico/Documents/test_bsp_upload/mymaps/wall_button_old_aperture.bsp");
-	// if(!file.exists()) {
-	//     qInfo() << "File does not exist!";
-	//     return;
-	// };
-	// file.open(QFile::ReadOnly);
-	// if(file.size() > 209715200){
-	//     qInfo() << "File too large!";
-	//     return;
-	// }
-	// UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( "mymaps/wall_button_old_aperture.bsp" );
-	// if(file.size() > 104857600){
-	//     QByteArray data = file.readAll();
-	//     QByteArray first = data.left(104857600); //gets the first 100mb.
-	//     QByteArray rest = data.right(data.size() - 104857600); //gets the rest.
-	//    qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, first.constData(), 104857600 );
-	//    qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, rest.constData(), data.size() - 104857600 );
-	// } else {
-	//     QByteArray data = file.readAll();
-	//    qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.constData(), data.size());
-	// }
-	// qInfo() << SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle );
-
-	// PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( 2709544274 );
-	// qInfo() << SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, "mymaps/wall_button_old_aperture.bsp" );
-	// SteamRemoteStorage()->UpdatePublishedFileVisibility(old_API_Handle,k_ERemoteStoragePublishedFileVisibilityPrivate);
-	// SteamParamStringArray_t tags =  SteamParamStringArray_t();
-	// tags.m_ppStrings = new const char*[1];
-	// tags.m_ppStrings[0] = "Singleplayer";
-	// tags.m_nNumStrings = 1;
-	// SteamRemoteStorage()->UpdatePublishedFileTags(old_API_Handle,&tags);
-	// SteamAPICall_t call = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
-	// m_CallOldApiResultSubmitItemUpdate.Set(call, this, &CP2MapMainMenu::OnOldApiSubmitItemUpdate);
-
-	// SteamParamStringArray_t strs = SteamParamStringArray_t();
-	// strs.m_nNumStrings = 0;
-	// SteamRemoteStorage()->PublishWorkshopFile("/home/trico/Documents/test_bsp_upload/mymaps/wall_button_old_aperture.bsp","/home/trico/Documents/Images/SWP w8.png",620,"this is a test","Test",k_ERemoteStoragePublishedFileVisibilityPrivate,&strs,EWorkshopFileType::k_EWorkshopFileTypeCommunity);
-	// m_setLoaded = false;
-	// BaseCallbackLoop();
-	// CP2MapPublisher *publisher = new CP2MapPublisher(nullptr,true);
-	// publisher->exec();
-
-	// PublishedFileId_t field = 2709544274;
-	// qInfo() << "Published FileID:" << field << "\n";
-
 	QTreeWidget *widget = this->m_treeWidget;
 	QTreeWidgetItem *item = widget->selectedItems()[0];
 	int itemIndex = item->data( 1, Qt::UserRole ).toInt();
@@ -209,34 +164,11 @@ void CP2MapMainMenu::onEditPressed()
 	CP2MapPublisher *publisher = new CP2MapPublisher( this, true );
 	publisher->LoadExistingDetails( Details, itemIndex );
 	publisher->exec();
-
-	// UGCUpdateHandle_t hUpdateHandle = SteamUGC()->StartItemUpdate(CP2MapMainMenu::ConsumerID, Details.m_nPublishedFileId);
-
-	// bool bTitleResult = SteamUGC()->SetItemTitle(hUpdateHandle, "Test Map Upload");
-	// bool bDescResult = SteamUGC()->SetItemDescription(hUpdateHandle, "This was a test from an uploader program a friend wrote");
-	// bool bVisibilityResult = SteamUGC()->SetItemVisibility(hUpdateHandle, k_ERemoteStoragePublishedFileVisibilityPrivate);
-	// const char* preview = "///home/trico/Documents/Images/swp logo discord.png";
-	// bool bPreviewResult = SteamUGC()->SetItemPreview(hUpdateHandle, preview);
-
-	// SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate(hUpdateHandle, "Test from application");
-	// m_CallResultSubmitItemUpdate.Set(hApiSubmitItemHandle, this, &CP2MapMainMenu::OnSubmitItemUpdate);
-	// m_setLoaded = false;
-	// BaseCallbackLoop();
 }
 
 void CP2MapMainMenu::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool bFailure )
 {
-	// qInfo() << "Uploading" << "\n";
-	// qInfo() << pItem->m_eResult << "\n";
-	// void CP2MapPublisher::OnSubmitItemUpdate(SubmitItemUpdateResult_t* pItem, bool bFailure){
-	// qInfo() << "Uploading" << "\n";
-	// qInfo() << pItem->m_eResult << "\n";
-	// PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( 2709544274 );
-	// SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, "///home/trico/Documents/test_bsp_upload/mymaps/wall_button_old_aperture.bsp" );
-	// SteamAPICall_t call = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
-	// m_CallOldApiResultSubmitItemUpdate.Set(call, this, &CP2MapPublisher::OnOldApiSubmitItemUpdate);
 	FinishLoopCall();
-	// Parent->isload
 };
 
 void CP2MapMainMenu::onRefreshPressed()
