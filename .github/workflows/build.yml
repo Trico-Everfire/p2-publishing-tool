@@ -1,0 +1,79 @@
+name: Build
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch: # nothing here
+jobs:
+#  build-linux:
+#    strategy:
+#      matrix:
+#        build_type: [ Debug, Release ]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout Repository
+#        uses: actions/checkout@v2
+#        
+#      - name: Install Qt5
+#        uses: WillBrennan/yaqti@2021.07.29
+#        with:
+#          version: 5.15.2
+#          os: linux
+#          platform: desktop
+#          output: '${{github.workspace}}/libs/Qt'
+#
+#      - name: Configure CMake
+#        run: cmake -G "Unix Makefiles" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+#
+#      - name: Build
+#        run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
+#        
+#      - name: Upload Artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: ChiraEngine-linux-${{matrix.compiler}}-${{matrix.build_type}}
+#          path: |
+#            ${{github.workspace}}/build/p2_map_publisher
+#            ${{github.workspace}}/build/*.s*
+#
+  build-msvc:
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        
+      - name: Install Qt5
+        uses: WillBrennan/yaqti@2021.07.29
+        with:
+          version: 5.15.2
+          os: windows
+          platform: desktop
+          output: '${{github.workspace}}/libs/Qt'
+          
+      - name: Install Steamworks
+        run: git clone https://craftablescience:${{secrets.STEAMWORKS_TOKEN}}@github.com/craftablescience/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt'
+
+      - name: Build
+        run: cmake --build build --config ${{matrix.build_type}}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: p2-publishing-tool-windows-${{matrix.build_type}}
+          path: |
+            ${{github.workspace}}\build\p2_map_publisher.exe
+            ${{github.workspace}}\build\*.dll
+            ${{github.workspace}}\build\platforms\*.dll
