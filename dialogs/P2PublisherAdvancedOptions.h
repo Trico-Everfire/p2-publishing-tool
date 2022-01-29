@@ -67,7 +67,7 @@ public:
 	void setupUi( QDialog *Advanced )
 	{
 		if ( Advanced->objectName().isEmpty() )
-			Advanced->setObjectName( QString::fromUtf8( "Advanced" ) );
+		Advanced->setObjectName( QString::fromUtf8( "Advanced" ) );
 		Advanced->resize( 700, 442 );
 		Advanced->setWindowFilePath( QString::fromUtf8( "" ) );
 		buttonBox = new QDialogButtonBox( Advanced );
@@ -203,6 +203,11 @@ public:
 			QPixmap tempMap = QPixmap( filePath );
 			if(tempMap.isNull()){
 				QMessageBox::warning( nullptr, "Invalid Image", "Could not load the image." );
+				return;
+			}
+			QFileInfo file(filePath);
+			if(file.size() > 1048576){
+				QMessageBox::warning( nullptr, "Image File Size Too Big", "This uploader is in Alpha and does not yet support dynamic image compression, therefor images can only be uploaded under 1MB.", QMessageBox::Ok );
 				return;
 			}
 			tempMap = tempMap.scaled( 201, 121, Qt::IgnoreAspectRatio );

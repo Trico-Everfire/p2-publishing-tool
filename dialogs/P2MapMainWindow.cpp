@@ -90,6 +90,7 @@ CP2MapMainMenu::~CP2MapMainMenu()
 
 void CP2MapMainMenu::treeSelectionChanged()
 {
+	//If the selected items is larger than 1, enable the delete button.
 	if ( m_treeWidget->selectedItems().length() > 0 )
 	{
 		m_treeWidget->selectedItems()[0];
@@ -106,6 +107,11 @@ void CP2MapMainMenu::treeSelectionChanged()
 void CP2MapMainMenu::onAddPressed()
 {
 	CP2MapPublisher *publisher = new CP2MapPublisher( this );
+	QMetaObject::Connection publisherConnection = connect(publisher,&CP2MapPublisher::mapPublisherClosed,this,[&](){
+		qInfo() << "logged";
+		onRefreshPressed();
+		disconnect(publisherConnection);
+	});
 	publisher->exec();
 }
 
@@ -136,21 +142,18 @@ void CP2MapMainMenu::onDeletePressed()
 		SteamUGCDetails_t Details = SUGCD.at( itemIndex );
 		SteamAPICall_t call = SteamUGC()->DeleteItem( Details.m_nPublishedFileId );
 		m_CallResultDeleteItem.Set(call,this, &CP2MapMainMenu::OnDeleteItem);
-		StartLoopCall();
-		
+		SteamHelper::StartLoopCall();
 	}
 }
 
 void CP2MapMainMenu::OnDeleteItem(DeleteItemResult_t *pItem, bool bFailure)
 {
-	//FinishLoopCall();
 	onRefreshPressed();
 }
 
 void CP2MapMainMenu::OnOldApiSubmitItemUpdate( RemoteStorageUpdatePublishedFileResult_t *pItem, bool pFailure )
 {
-	qInfo() << pItem->m_eResult << "\n";
-	FinishLoopCall();
+	SteamHelper::FinishLoopCall();
 }
 
 void CP2MapMainMenu::onEditPressed()
@@ -163,12 +166,17 @@ void CP2MapMainMenu::onEditPressed()
 	qInfo() << Details.m_pchFileName;
 	CP2MapPublisher *publisher = new CP2MapPublisher( this, true );
 	publisher->LoadExistingDetails( Details, itemIndex );
+	QMetaObject::Connection publisherConnection = connect(publisher,&CP2MapPublisher::mapPublisherClosed,this,[&](){
+		qInfo() << "logged";
+		onRefreshPressed();
+		disconnect(publisherConnection);
+	});
 	publisher->exec();
 }
 
 void CP2MapMainMenu::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool bFailure )
 {
-	FinishLoopCall();
+	SteamHelper::FinishLoopCall();
 };
 
 void CP2MapMainMenu::onRefreshPressed()
@@ -183,7 +191,7 @@ void CP2MapMainMenu::runSetCallbacks()
 	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
 	m_SteamCallResultUGCRequest.Set( hApiQueryHandle, this, &CP2MapMainMenu::OnSendQueryUGCRequest );
 	SteamUGC()->ReleaseQueryUGCRequest( hQueryResult );
-	StartLoopCall();
+	SteamHelper::StartLoopCall();
 }
 
 void CP2MapMainMenu::ChangedTimezone( const QString &index )
@@ -206,7 +214,7 @@ void CP2MapMainMenu::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bo
 	{
 		qInfo() << "Query Failed"
 				<< "\n";
-		FinishLoopCall(); // sanity check if close doesn't work.
+		SteamHelper::FinishLoopCall(); // sanity check if close doesn't work.
 		this->close();
 		return;
 	}
@@ -220,7 +228,6 @@ void CP2MapMainMenu::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bo
 		SteamUGCDetails_t pDetails{};
 		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, index, &pDetails );
 
-		// QTimeZone timezone = QTimeZone(QTimeZone::availableTimeZoneIds()[0]); //we default to the first ID as that'll be the first ID inside the selection box.
 		QDateTime time = QDateTime::fromSecsSinceEpoch( pDetails.m_rtimeUpdated );
 
 		m_timezoneComboBox->setCurrentIndex( QTimeZone::availableTimeZoneIds().indexOf( time.timeZone().id() ) );
@@ -242,7 +249,7 @@ void CP2MapMainMenu::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bo
 		totalLoadedItems.push_back( pDetails.m_rtimeUpdated );
 		qInfo() << time.toString() << "\n";
 	}
-	FinishLoopCall();
+	SteamHelper::FinishLoopCall();
 
 	return;
 }

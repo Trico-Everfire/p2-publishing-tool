@@ -24,6 +24,7 @@
 #include <QtNetwork/QNetworkAccessManager>
 #include <QUrl>
 #include <QtNetwork/QNetworkReply>
+#include <QCloseEvent>
 #include <sstream>
 
 
@@ -71,10 +72,9 @@ namespace ui
 
 		void OnOldApiSubmitItemDownload( RemoteStorageDownloadUGCResult_t *pItem, bool pFailure );
 		CCallResult<CP2MapPublisher, RemoteStorageDownloadUGCResult_t> m_CallOldApiResultSubmitItemDownload;
-
-		void RefreshItems(SteamUGCQueryCompleted_t * pItem, bool bFailed);
 		CCallResult<CP2MapPublisher, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
-
+	signals:
+		void mapPublisherClosed();
 	private:
 		SteamUGCDetails_t m_editItemDetails;
 		CP2PublisherAdvancedOptions *AO;
@@ -86,5 +86,6 @@ namespace ui
 		void onClosePressed();
 		void onAgreementButtonPressed();
 		void onAdvancedClicked();
+		void closeEvent( QCloseEvent* event );
 	};
 } // namespace ui

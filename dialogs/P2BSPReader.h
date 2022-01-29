@@ -1,5 +1,6 @@
 #pragma once
 
+#pragma pack(push, 1) 
 static constexpr const int LUMP_AMOUNT = 64;
 
 struct lumpData_t
@@ -16,3 +17,4 @@ struct BSPHeaderStruct_t
 	int m_version;
 	lumpData_t lumps[LUMP_AMOUNT];
 };
+#pragma pack(pop)

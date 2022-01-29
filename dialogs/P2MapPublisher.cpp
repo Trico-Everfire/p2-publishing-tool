@@ -102,7 +102,7 @@ void CP2MapPublisher::LoadCreatingItem()
 {
 	SteamAPICall_t hApiCreateItemHandle = SteamUGC()->CreateItem( CP2MapMainMenu::ConsumerID, k_EWorkshopFileTypeCommunity );
 	m_CallResultCreateItem.Set( hApiCreateItemHandle, this, &CP2MapPublisher::OnCreateItem );
-	StartLoopCall();
+	SteamHelper::StartLoopCall();
 }
 
 void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
@@ -117,19 +117,19 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 			return;
 		};
 		file.open( QFile::ReadOnly );
-		if ( file.size() > 2097152 )
+		if ( file.size() > 209715200 )
 		{
 			qInfo() << "File too large!";
 			return;
 		}
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
-		if ( file.size() > 1048576 )
+		if ( file.size() > 104857600 )
 		{
 			QByteArray data = file.readAll();
-			QByteArray first = data.left( 1048576 );				 // gets the first 100mb.
-			QByteArray rest = data.right( data.size() - 1048576 ); // gets the rest.
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, first.constData(), 1048576 );
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, rest.constData(), data.size() - 1048576 );
+			QByteArray first = data.left( 104857600 );				 // gets the first 100mb.
+			QByteArray rest = data.right( data.size() - 104857600 ); // gets the rest.
+			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, first.constData(), 104857600 );
+			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, rest.constData(), data.size() - 104857600 );
 		}
 		else
 		{
@@ -174,10 +174,10 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 	}
 	bool bVisibilityResult = SteamUGC()->SetItemVisibility( hUpdateHandle, visibility );
 
-	std::string descr = "";
+	char* descr = "";
 	if ( m_edit && !AO->textEdit->toPlainText().isEmpty() )
 	{
-		descr = AO->textEdit->toPlainText().toStdString();
+		descr = strdup(AO->textEdit->toPlainText().toStdString().c_str());
 	}
 
 	SteamParamStringArray_t tags {};
@@ -223,12 +223,14 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		++iterator3;
 	}
 
-	// SteamUGC()->AddItemPreviewFile
 
 	qInfo() << "Reached Upadte Handle";
-	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, descr.c_str() );
+	qInfo() << QString(descr);
+	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, (const char*) descr );
 	m_CallResultSubmitItemUpdate.Set( hApiSubmitItemHandle, this, &CP2MapPublisher::OnSubmitItemUpdate );
-	StartLoopCall();
+	SteamHelper::StartLoopCall();
+	qInfo() << "End of Function Reached!";
+	free(descr);
 }
 
 void CP2MapPublisher::OnCreateItem( CreateItemResult_t *pItem, bool bFailure )
@@ -247,20 +249,7 @@ void CP2MapPublisher::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool 
 	qInfo() << bFailure;
 	qInfo() << pItem->m_eResult;
 
-	// UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published, k_EUGCMatchingUGCType_Items_ReadyToUse, k_EUserUGCListSortOrder_CreationOrderDesc, SteamUtils()->GetAppID(), CP2MapMainMenu::ConsumerID, 1 );
-	// SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
-	// m_SteamCallResultUGCRequest.Set(hApiQueryHandle, this, &CP2MapPublisher::RefreshItems);
-
-	FinishLoopCall();
 	this->close();
-}
-
-void CP2MapPublisher::RefreshItems(SteamUGCQueryCompleted_t * pItem, bool bFailed)
-{
-	CP2MapMainMenu* menu = reinterpret_cast<CP2MapMainMenu*>(parent());
-	menu->OnSendQueryUGCRequest(pItem,bFailed);
-	menu->m_treeWidget->clear();
-	FinishLoopCall();
 }
 
 void CP2MapPublisher::OnOldApiSubmitItemUpdate( RemoteStorageUpdatePublishedFileResult_t *pItem, bool pFailure )
@@ -310,12 +299,12 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 	std::string dir = QDir::currentPath().toStdString() + "/resources/" + std::to_string( details.m_nPublishedFileId ) + "_Image0.png";
 	SteamAPICall_t res = SteamRemoteStorage()->UGCDownloadToLocation( details.m_hPreviewFile, dir.c_str(), 0 );
 	m_CallOldApiResultSubmitItemDownload.Set( res, this, &CP2MapPublisher::OnOldApiSubmitItemDownload );
-	StartLoopCall();
+	SteamHelper::StartLoopCall();
 	UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published, k_EUGCMatchingUGCType_Items_ReadyToUse, k_EUserUGCListSortOrder_CreationOrderDesc, SteamUtils()->GetAppID(), CP2MapMainMenu::ConsumerID, 1 );
 	SteamUGC()->SetReturnAdditionalPreviews( hQueryResult, true );
 	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
 	m_CallResultSendQueryUGCRequest.Set( hApiQueryHandle, this, &CP2MapPublisher::OnSendQueryUGCRequest );
-	StartLoopCall();
+	SteamHelper::StartLoopCall();
 	SteamUGC()->ReleaseQueryUGCRequest( hQueryResult );
 }
 
@@ -382,7 +371,7 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 		}
 	}
 
-	FinishLoopCall();
+	SteamHelper::FinishLoopCall();
 }
 
 void CP2MapPublisher::OnOldApiSubmitItemDownload( RemoteStorageDownloadUGCResult_t *pItem, bool pFailure )
@@ -394,7 +383,7 @@ void CP2MapPublisher::OnOldApiSubmitItemDownload( RemoteStorageDownloadUGCResult
 	tempMap = tempMap.scaled( 239.25, 134.75, Qt::IgnoreAspectRatio );
 	m_pPreviewImage = &tempMap;
 	pImageLabel->setPixmap( *m_pPreviewImage );
-	FinishLoopCall();
+	SteamHelper::FinishLoopCall();
 }
 
 void CP2MapPublisher::onAgreementButtonPressed()
@@ -439,22 +428,22 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		return;
 	}
 	
-	if ( file.size() > 2097152 )
+	if ( file.size() > 209715200 )
 	{
 		QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
 		return;
 	}
 	QDataStream stream { &file };
 	QByteArray bArray( file.size(), 0 );
-	qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
-	BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( bArray.data() );
-	qInfo() << castedLump->m_version;
-	if ( castedLump->m_version != 21 )
+	BSPHeaderStruct_t castedLump;
+	memcpy(&castedLump,bArray.data(),sizeof(BSPHeaderStruct_t));
+	qInfo() << castedLump.m_version;
+	if ( castedLump.m_version != 21 )
 	{
 		QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
 		return;
 	}
-	QString Entities = bArray.data() + castedLump->lumps[0].fileOffset;
+	QString Entities = bArray.data() + castedLump.lumps[0].fileOffset;
 	if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
 	{
 		m_bspHasPTIInstance = false;
@@ -496,7 +485,7 @@ void CP2MapPublisher::onOKPressed()
 		return;
 	}
 
-	if(!m_edit || (m_edit && defaultFileLocBSP.startsWith("mymaps/"))){
+	if(!m_edit || (m_edit && !defaultFileLocBSP.startsWith("mymaps/"))){
 		if ( !defaultFileLocBSP.endsWith( ".bsp" ) )
 		{
 			QMessageBox::warning( this, "No Map Found!", "You don't have a BSP selected! Please select a valid BSP", QMessageBox::Ok );
@@ -515,7 +504,7 @@ void CP2MapPublisher::onOKPressed()
 			QMessageBox::warning( this, "File Not Available!", "This BSP is not available, could not be read..." );
 			return;
 		}
-		if ( file.size() > 2097152 )
+		if ( file.size() > 209715200 )
 		{
 			QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
 			return;
@@ -523,14 +512,15 @@ void CP2MapPublisher::onOKPressed()
 		QDataStream stream { &file };
 		QByteArray bArray( file.size(), 0 );
 		qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
-		BSPHeaderStruct_t *castedLump = reinterpret_cast<BSPHeaderStruct_t *>( bArray.data() );
-		qInfo() << castedLump->m_version;
-		if ( castedLump->m_version != 21 )
+		BSPHeaderStruct_t castedLump;
+		memcpy(&castedLump,bArray.data(),sizeof(BSPHeaderStruct_t));
+		qInfo() << castedLump.m_version;
+		if ( castedLump.m_version != 21 )
 		{
 			QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
 			return;
 		}
-		QString Entities = bArray.data() + castedLump->lumps[0].fileOffset;
+		QString Entities = bArray.data() + castedLump.lumps[0].fileOffset;
 		if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
 		{
 			m_bspHasPTIInstance = false;
@@ -557,6 +547,12 @@ void CP2MapPublisher::LoadEditItem()
 void CP2MapPublisher::onClosePressed()
 {
 	this->close();
+}
+
+void CP2MapPublisher::closeEvent( QCloseEvent* event )
+{
+    emit mapPublisherClosed();
+    event->accept();
 }
 
 std::vector<std::string> CP2MapPublisher::splitString( const std::string &input, char delimiter )
