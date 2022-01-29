@@ -66,6 +66,8 @@ elseif(WIN32)
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/win64/steam_api64.dll" "${CMAKE_BINARY_DIR}/steam_api64.dll" COPYONLY)
 endif()
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Credits.txt" "${CMAKE_BINARY_DIR}/Credits.txt" COPYONLY)
+
 add_executable(${PROJECT_NAME} ${SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS})
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network ${STEAM_API})
 
