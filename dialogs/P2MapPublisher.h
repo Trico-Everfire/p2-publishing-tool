@@ -84,7 +84,7 @@ namespace ui
 		void OpenBSPFileExplorer();
 		void onOKPressed();
 		void onClosePressed();
-		void onAgreementButtonPressed();
+		static void onAgreementButtonPressed();
 		void onAdvancedClicked();
 		void closeEvent( QCloseEvent* event );
 	};

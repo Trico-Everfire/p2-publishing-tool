@@ -1,8 +1,8 @@
 #pragma once
 
-#pragma pack(push, 1) 
 static constexpr const int LUMP_AMOUNT = 64;
 
+#pragma pack(push, 1)
 struct lumpData_t
 {
 	int fileOffset;

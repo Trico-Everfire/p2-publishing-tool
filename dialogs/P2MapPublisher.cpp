@@ -1,5 +1,7 @@
 #include "dialogs/P2MapPublisher.h"
 
+#include "P2DialogConfig.h"
+
 using namespace ui;
 
 CP2MapPublisher::CP2MapPublisher( QWidget *pParent ) :
@@ -287,7 +289,7 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 	m_EditItemIndex = index;
 
 	std::vector<std::string> vector = splitString( details.m_rgchTags, ',' );
-	for ( std::string str : vector )
+	for ( const std::string &str : vector )
 	{
 		if ( str == "Singleplayer" )
 			continue;
@@ -393,8 +395,7 @@ void CP2MapPublisher::onAgreementButtonPressed()
 
 void CP2MapPublisher::OpenImageFileExplorer()
 {
-	auto opts = QFileDialog::Option::DontUseNativeDialog;
-	QString filePath = QFileDialog::getOpenFileName( this, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, opts );
+	QString filePath = QFileDialog::getOpenFileName( this, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
 	if ( filePath.isEmpty() )
 		return;
 	defaultFileLocIMG = filePath;
@@ -411,8 +412,7 @@ void CP2MapPublisher::OpenImageFileExplorer()
 
 void CP2MapPublisher::OpenBSPFileExplorer()
 {
-	auto opts = QFileDialog::Option::DontUseNativeDialog;
-	QString filePath = QFileDialog::getOpenFileName( this, "Open", defaultFileLocBSP, "*.bsp", nullptr, opts );
+	QString filePath = QFileDialog::getOpenFileName( this, "Open", defaultFileLocBSP, "*.bsp", nullptr, FILE_PICKER_OPTS );
 	defaultFileLocBSP = filePath;
 	if ( filePath.isEmpty() )
 		return;
@@ -433,17 +433,16 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
 		return;
 	}
-	QDataStream stream { &file };
-	QByteArray bArray( file.size(), 0 );
-	BSPHeaderStruct_t castedLump;
-	memcpy(&castedLump,bArray.data(),sizeof(BSPHeaderStruct_t));
+	BSPHeaderStruct_t castedLump{};
+	const auto bArray = file.readAll();
+	memcpy(&castedLump,bArray.constData(),sizeof(BSPHeaderStruct_t));
 	qInfo() << castedLump.m_version;
 	if ( castedLump.m_version != 21 )
 	{
 		QMessageBox::warning( this, "Invalid BSP", "Invalid BSP.\nEither the file is corrupt or the map is not for Portal 2.\n(only works for BSP version 21)" );
 		return;
 	}
-	QString Entities = bArray.data() + castedLump.lumps[0].fileOffset;
+	QString Entities = bArray.constData() + castedLump.lumps[0].fileOffset;
 	if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
 	{
 		m_bspHasPTIInstance = false;
@@ -512,7 +511,7 @@ void CP2MapPublisher::onOKPressed()
 		QDataStream stream { &file };
 		QByteArray bArray( file.size(), 0 );
 		qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
-		BSPHeaderStruct_t castedLump;
+		BSPHeaderStruct_t castedLump{};
 		memcpy(&castedLump,bArray.data(),sizeof(BSPHeaderStruct_t));
 		qInfo() << castedLump.m_version;
 		if ( castedLump.m_version != 21 )

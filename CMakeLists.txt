@@ -37,6 +37,7 @@ set(CMAKE_AUTORCC ON)
 
 set(SRC
 	# Dialogs
+	dialogs/P2DialogConfig.h
 	dialogs/P2MapPublisher.h
 	dialogs/P2MapPublisher.cpp
 	dialogs/P2MapMainWindow.h

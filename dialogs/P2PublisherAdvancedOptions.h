@@ -35,6 +35,8 @@
 #include <QUrl>
 #include <QtNetwork/QNetworkReply>
 
+#include "P2DialogConfig.h"
+
 QT_BEGIN_NAMESPACE
 
 class Ui_Advanced
@@ -196,8 +198,7 @@ public:
         });
 
         QObject::connect( toolButton_4, &QPushButton::pressed, Advanced, [&](){
-			auto opts = QFileDialog::Option::DontUseNativeDialog;
-			QString filePath = QFileDialog::getOpenFileName( nullptr, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, opts );
+			QString filePath = QFileDialog::getOpenFileName( nullptr, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
 			if(filePath.isEmpty()) return;
 			defaultFileLocIMG = filePath;
 			QPixmap tempMap = QPixmap( filePath );
