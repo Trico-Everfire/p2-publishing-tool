@@ -76,3 +76,4 @@ jobs:
             ${{github.workspace}}\build\p2_map_publisher.exe
             ${{github.workspace}}\build\*.dll
             ${{github.workspace}}\build\platforms\*.dll
+            ${{github.workspace}}\build\Credits.txt
