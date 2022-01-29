@@ -54,6 +54,7 @@ jobs:
         with:
           dir: '${{github.workspace}}/libs/Qt'
           version: 5.15.2
+          arch: win64_msvc2019_64
 
       - name: Install Steamworks
         run: git clone https://craftablescience:${{secrets.STEAMWORKS_TOKEN}}@github.com/craftablescience/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
@@ -62,7 +63,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure CMake
-        run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt'
+        run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/5.15.2/win64_msvc2019_64'
 
       - name: Build
         run: cmake --build build --config ${{matrix.build_type}}
