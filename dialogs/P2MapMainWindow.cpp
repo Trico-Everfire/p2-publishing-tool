@@ -9,7 +9,7 @@ CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) :
 	// Make sure steam_appid.txt exists
 	QString filename = "steam_appid.txt";
 	QFile file( filename );
-	if ( file.open( QIODevice::ReadWrite ) && !file.exists() )
+	if ( !QFile::exists( filename ) && file.open( QIODevice::WriteOnly ) )
 	{
 		QTextStream stream( &file );
 		// todo: maybe don't hardcode this at some point?
