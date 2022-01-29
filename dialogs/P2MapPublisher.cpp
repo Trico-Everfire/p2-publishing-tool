@@ -12,6 +12,9 @@ CP2MapPublisher::CP2MapPublisher( QWidget *pParent ) :
 CP2MapPublisher::CP2MapPublisher( QWidget *pParent, bool edit ) :
 	QDialog( pParent )
 {
+	m_EditItemIndex = -1;
+	m_editItemDetails = SteamUGCDetails_t();
+
 	this->setWindowTitle( tr( "Publish File" ) );
 	m_edit = edit;
 	m_bspHasPTIInstance = false;
@@ -19,28 +22,27 @@ CP2MapPublisher::CP2MapPublisher( QWidget *pParent, bool edit ) :
 	auto pFindLabel = new QLabel( tr( "Preview Image:" ), this );
 
 	QPixmap tempMap = QPixmap( ":/zoo_textures/SampleImage.png" );
-	tempMap = tempMap.scaled( 478.5 / 2, 269.5 / 2, Qt::IgnoreAspectRatio );
-	m_pPreviewImage = &tempMap;
+	tempMap = tempMap.scaled( 478 / 2, 269 / 2, Qt::IgnoreAspectRatio );
 	pImageLabel = new QLabel( this );
-	pImageLabel->setPixmap( *m_pPreviewImage );
-	pImageLabel->setMaximumSize( 239.25, 134.75 );
+	pImageLabel->setPixmap( tempMap );
+	pImageLabel->setMaximumSize( 239, 134 );
 	m_advancedOptionsWindow = new QDialog( this );
 	AO = new CP2PublisherAdvancedOptions();
 	AO->setupUi( m_advancedOptionsWindow );
 
 	auto pBrowseButton = new QPushButton( this );
 	pBrowseButton->setText( tr( "Browse..." ) );
-	pBrowseButton->setFixedSize( 478.5 / 2, 20 );
+	pBrowseButton->setFixedSize( 478/ 2, 20 );
 
 	auto pAdvancedOptionsButton = new QPushButton( this );
 	pAdvancedOptionsButton->setText( tr( "Advanced Options." ) );
-	pAdvancedOptionsButton->setFixedSize( 478.5 / 2, 40 );
+	pAdvancedOptionsButton->setFixedSize( 478/ 2, 40 );
 
 	pSteamToSAgreement = new QCheckBox( tr( "I accept the terms of the Steam Workshop Contribution Agreement." ), this );
 
 	auto pAgreementButton = new QPushButton( this );
 	pAgreementButton->setText( tr( "View Agreement" ) );
-	pAgreementButton->setFixedSize( 478.5 / 2, 20 );
+	pAgreementButton->setFixedSize( 478 / 2, 20 );
 
 	auto pButtonBox = new QDialogButtonBox( Qt::Orientation::Horizontal, this );
 	auto pOKButton = pButtonBox->addButton( tr( m_edit ? "Update" : "Upload" ), QDialogButtonBox::ApplyRole );
@@ -117,7 +119,7 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		{
 			qInfo() << "File does not exist!";
 			return;
-		};
+		}
 		file.open( QFile::ReadOnly );
 		if ( file.size() > 209715200 )
 		{
@@ -174,13 +176,9 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 			visibility = k_ERemoteStoragePublishedFileVisibilityPublic;
 			break;
 	}
-	bool bVisibilityResult = SteamUGC()->SetItemVisibility( hUpdateHandle, visibility );
+	SteamUGC()->SetItemVisibility( hUpdateHandle, visibility );
 
-	char* descr = "";
-	if ( m_edit && !AO->textEdit->toPlainText().isEmpty() )
-	{
-		descr = strdup(AO->textEdit->toPlainText().toStdString().c_str());
-	}
+	char* descr = strdup(AO->textEdit->toPlainText().toStdString().c_str());
 
 	SteamParamStringArray_t tags {};
 
@@ -192,7 +190,7 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		charray.push_back( strdup( ( *iterator2 )->text( 0 ).toStdString().c_str() ) );
 		++iterator2;
 	}
-	tags.m_nNumStrings = charray.size();
+	tags.m_nNumStrings = (int32) charray.size();
 	tags.m_ppStrings = (const char **)charray.data();
 
 	qInfo() << SteamUGC()->SetItemTags( hUpdateHandle, &tags );
@@ -331,7 +329,7 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 		qInfo() << SteamUGC()->GetQueryUGCAdditionalPreview( pQuery->m_handle, m_EditItemIndex, i,
 															 pchUrl, iUrlSize, pchFileName,
 															 iFileSize, &pType );
-		QTreeWidgetItem *pItem = new QTreeWidgetItem( 0 );
+		auto *pItem = new QTreeWidgetItem( 0 );
 
 		if ( pType == k_EItemPreviewType_Image )
 		{
@@ -341,7 +339,7 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 			QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( pchUrl ) ) );
 			QEventLoop loop;
 			QObject::connect( reply, SIGNAL( finished() ), &loop, SLOT( quit() ) );
-			QObject::connect( reply, SIGNAL( error( QNetworkReply::NetworkError ) ), &loop, SLOT( quit() ) );
+			QObject::connect( reply, SIGNAL( error(QNetworkReply::NetworkError) ), &loop, SLOT( quit() ) );
 			loop.exec();
 
 			QImage image;
@@ -382,9 +380,8 @@ void CP2MapPublisher::OnOldApiSubmitItemDownload( RemoteStorageDownloadUGCResult
 	QPixmap tempMap = QPixmap( filepath.c_str() );
 	if ( tempMap.isNull() )
 		tempMap = QPixmap( ":/zoo_textures/InvalidImage.png" );
-	tempMap = tempMap.scaled( 239.25, 134.75, Qt::IgnoreAspectRatio );
-	m_pPreviewImage = &tempMap;
-	pImageLabel->setPixmap( *m_pPreviewImage );
+	tempMap = tempMap.scaled( 239, 134, Qt::IgnoreAspectRatio );
+	pImageLabel->setPixmap( tempMap );
 	SteamHelper::FinishLoopCall();
 }
 
@@ -404,10 +401,9 @@ void CP2MapPublisher::OpenImageFileExplorer()
 	{
 		defaultFileLocIMG = "InvalidImage.png";
 		tempMap = QPixmap( ":/zoo_textures/InvalidImage.png" );
-	};
-	tempMap = tempMap.scaled( 239.25, 134.75, Qt::IgnoreAspectRatio );
-	m_pPreviewImage = &( tempMap );
-	pImageLabel->setPixmap( *m_pPreviewImage );
+	}
+	tempMap = tempMap.scaled( 239, 134., Qt::IgnoreAspectRatio );
+	pImageLabel->setPixmap( tempMap );
 }
 
 void CP2MapPublisher::OpenBSPFileExplorer()
@@ -509,8 +505,8 @@ void CP2MapPublisher::onOKPressed()
 			return;
 		}
 		QDataStream stream { &file };
-		QByteArray bArray( file.size(), 0 );
-		qint32 bytes = stream.readRawData( bArray.data(), bArray.size() );
+		QByteArray bArray( (int) file.size(), 0 );
+		stream.readRawData( bArray.data(), bArray.size() );
 		BSPHeaderStruct_t castedLump{};
 		memcpy(&castedLump,bArray.data(),sizeof(BSPHeaderStruct_t));
 		qInfo() << castedLump.m_version;

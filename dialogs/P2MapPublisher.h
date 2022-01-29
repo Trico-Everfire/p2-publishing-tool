@@ -40,7 +40,6 @@ namespace ui
 		bool m_edit;
 		bool m_bspHasPTIInstance;
 		uint32 m_EditItemIndex;
-		QPixmap *m_pPreviewImage;
 		QLabel *pImageLabel;
 		QLineEdit *pFileEntry;
 		QLineEdit *pTitleLine;
@@ -76,7 +75,7 @@ namespace ui
 	signals:
 		void mapPublisherClosed();
 	private:
-		SteamUGCDetails_t m_editItemDetails;
+		SteamUGCDetails_t m_editItemDetails{};
 		CP2PublisherAdvancedOptions *AO;
 		QDialog *m_advancedOptionsWindow;
 	private slots:
