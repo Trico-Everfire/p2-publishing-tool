@@ -7,6 +7,12 @@
 #include <QCommonStyle>
 #include <QStyleFactory>
 
+#ifdef WIN32
+	#ifdef NDEBUG
+		#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+	#endif
+#endif
+
 int main( int argc, char **argv )
 {
 	QApplication app( argc, argv );
