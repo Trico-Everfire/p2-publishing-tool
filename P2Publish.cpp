@@ -7,10 +7,8 @@
 #include <QCommonStyle>
 #include <QStyleFactory>
 
-#ifdef WIN32
-	#ifdef NDEBUG
-		#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-	#endif
+#if defined(_WIN32) && defined(NDEBUG)
+	#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 #endif
 
 int main( int argc, char **argv )
