@@ -57,7 +57,7 @@ jobs:
           arch: win64_msvc2019_64
 
       - name: Install Steamworks
-        run: git clone https:// Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
+        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
 
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
