@@ -1,19 +1,10 @@
 #include "dialogs/P2MapMainWindow.h"
 
-#if defined(_WIN32) && !defined(DEBUG)
-#include <Windows.h>
-#endif
-
 using namespace ui;
 
 CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) :
 	QDialog( pParent )
 {
-	// Get rid of ugly console on launch
-#if defined(_WIN32) && !defined(DEBUG)
-	FreeConsole();
-#endif
-
 	// Make sure steam_appid.txt exists
 	QString filename = "steam_appid.txt";
 	QFile file( filename );

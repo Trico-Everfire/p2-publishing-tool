@@ -7,6 +7,10 @@
 #include <QCommonStyle>
 #include <QStyleFactory>
 
+#if defined(_WIN32) && defined(NDEBUG)
+	#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#endif
+
 int main( int argc, char **argv )
 {
 	QApplication app( argc, argv );
@@ -29,10 +33,10 @@ int main( int argc, char **argv )
 	palette.setColor(QPalette::Highlight, QColor(42, 130, 218));
 	palette.setColor(QPalette::HighlightedText, Qt::black);
 	palette.setColor(QPalette::Active, QPalette::Button, QColor(49,54,59));
-    palette.setColor(QPalette::Disabled, QPalette::ButtonText, Qt::darkGray);
-    palette.setColor(QPalette::Disabled, QPalette::WindowText, Qt::darkGray);
-    palette.setColor(QPalette::Disabled, QPalette::Text, Qt::darkGray);
-    palette.setColor(QPalette::Disabled, QPalette::Light, QColor(49,54,59));
+    	palette.setColor(QPalette::Disabled, QPalette::ButtonText, Qt::darkGray);
+    	palette.setColor(QPalette::Disabled, QPalette::WindowText, Qt::darkGray);
+    	palette.setColor(QPalette::Disabled, QPalette::Text, Qt::darkGray);
+    	palette.setColor(QPalette::Disabled, QPalette::Light, QColor(49,54,59));
 	app.setPalette(palette);
 
 	// bool performSingleCheck = true;
