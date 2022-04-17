@@ -26,11 +26,11 @@ jobs:
       - name: Install Steamworks
         run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
 
-      - name: Copy Steamworks File
-        uses: canastro/copy-file-action@master
-        with:
-          source: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/steamworks/redistributable_bin/linux64/libsteam_api.so"
-          target: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so"
+#      - name: Copy Steamworks File
+#        uses: canastro/copy-file-action@master
+#        with:
+#          source: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/steamworks/redistributable_bin/linux64/libsteam_api.so"
+#          target: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so"
 
       - name: Configure CMake
         run: cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/5.15.2/gcc_64'
