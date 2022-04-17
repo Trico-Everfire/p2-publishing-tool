@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS   ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+function(SYMLINK OLD NEW)
+	INSTALL(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${OLD} ${NEW} )")
+endfunction()
+
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "..." FORCE)
 endif()
@@ -53,13 +57,12 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network)
 set(APP_ICON_RESOURCE_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR}/res/appicon.rc)
 
 if(UNIX)
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Core.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Core.so" COPYONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Gui.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Gui.so" COPYONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Widgets.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Widgets.so" COPYONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Network.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Network.so" COPYONLY)
-	
-	set(STEAM_API  "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Core.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Core.so.5.15.2" COPYONLY)
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Gui.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Gui.so.5.15.2" COPYONLY)
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Widgets.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Widgets.so.5.15.2" COPYONLY)
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Network.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Network.so.5.15.2" COPYONLY)
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so" "${CMAKE_BINARY_DIR}/libsteam_api.so" COPYONLY)
+	set(STEAM_API  "${CMAKE_BINARY_DIR}/libsteam_api.so")
 elseif(WIN32)
 	# MinGW doesn't like this, but the steam api DLL is incompatible with it anyway
 	set(STEAM_API  "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/win64/steam_api64.lib")
@@ -68,10 +71,11 @@ endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Credits.txt" "${CMAKE_BINARY_DIR}/Credits.txt" COPYONLY)
 
-add_executable(${PROJECT_NAME} ${SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS})
+add_executable(${PROJECT_NAME} ${SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS} ${link_target})
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network ${STEAM_API})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${QT_INCLUDE} ${QT_INCLUDE}/QtWidgets" "${QT_INCLUDE}/QtGui" "${QT_INCLUDE}/QtCore" "${QT_INCLUDE}/QtNetwork")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/public/steam")
 
