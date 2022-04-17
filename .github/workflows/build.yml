@@ -15,13 +15,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Qt5
-        uses: WillBrennan/yaqti@2021.07.29
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
         with:
           version: 5.15.2
-          os: linux
-          platform: desktop
-          output: '${{github.workspace}}/libs/Qt'
+          host: linux
+          target: desktop
+          dir: '${{github.workspace}}/libs/Qt'
 
       - name: Install Steamworks
         run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
@@ -35,7 +35,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ChiraEngine-linux-${{matrix.compiler}}-${{matrix.build_type}}
+          name: p2-publishing-tool-linux-${{matrix.build_type}}
           path: |
             ${{github.workspace}}/build/p2_map_publisher
             ${{github.workspace}}/build/*.s*
