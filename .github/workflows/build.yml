@@ -26,8 +26,38 @@ jobs:
       - name: Install Steamworks
         run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
 
+      - name: Copy Steamworks File
+        uses: canastro/copy-file-action@master
+        with:
+          source: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/steamworks/redistributable_bin/linux64/libsteam_api.so"
+          target: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so"
+
       - name: Configure CMake
         run: cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/5.15.2/gcc_64'
+
+      - name: Copy QT Network .so
+        uses: canastro/copy-file-action@master
+        with:
+          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/gcc_64/libQt5Network.so.5.15.2"
+          target: "${{github.workspace}}/libs/Qt/lib/libQt5Network.so.5.15.2"
+
+      - name: Copy QT Widgets .so
+        uses: canastro/copy-file-action@master
+        with:
+          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/gcc_64/libQt5Widgets.so.5.15.2"
+          target: "${{github.workspace}}/libs/Qt/lib/libQt5Widgets.so.5.15.2"
+
+      - name: Copy QT Gui .so
+        uses: canastro/copy-file-action@master
+        with:
+          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/gcc_64/libQt5Gui.so.5.15.2"
+          target: "${{github.workspace}}/libs/Qt/lib/libQt5Gui.so.5.15.2"
+
+      - name: Copy QT Core .so
+        uses: canastro/copy-file-action@master
+        with:
+          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/gcc_64/libQt5Core.so.5.15.2"
+          target: "${{github.workspace}}/libs/Qt/lib/libQt5Core.so.5.15.2"
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
