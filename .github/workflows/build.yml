@@ -35,25 +35,25 @@ jobs:
       - name: Copy QT Network .so
         uses: canastro/copy-file-action@master
         with:
-          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/${{runner.arch}}/bin/libQt5Network.so.5.15.2"
+          source: "${{Qt5_DIR}}/libQt5Network.so.5.15.2"
           target: "${{github.workspace}}/libs/Qt/lib/libQt5Network.so.5.15.2"
 
       - name: Copy QT Widgets .so
         uses: canastro/copy-file-action@master
         with:
-          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/${{runner.arch}}/bin/libQt5Widgets.so.5.15.2"
+          source: "${{Qt5_DIR}}/libQt5Widgets.so.5.15.2"
           target: "${{github.workspace}}/libs/Qt/lib/libQt5Widgets.so.5.15.2"
 
       - name: Copy QT Gui .so
         uses: canastro/copy-file-action@master
         with:
-          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/${{runner.arch}}/bin/libQt5Gui.so.5.15.2"
+          source: "${{Qt5_DIR}}/libQt5Gui.so.5.15.2"
           target: "${{github.workspace}}/libs/Qt/lib/libQt5Gui.so.5.15.2"
 
       - name: Copy QT Core .so
         uses: canastro/copy-file-action@master
         with:
-          source: "${{github.workspace}}/libs/Qt/Qt/5.15.2/g${{runner.arch}}/bin/libQt5Core.so.5.15.2"
+          source: "${{Qt5_DIR}}/libQt5Core.so.5.15.2"
           target: "${{github.workspace}}/libs/Qt/lib/libQt5Core.so.5.15.2"
 
       - name: Configure CMake
