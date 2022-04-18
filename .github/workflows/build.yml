@@ -38,6 +38,7 @@ jobs:
           source: "${{env.Qt5_DIR}}/libQt5Network.so.5.15.2"
           target: "${{github.workspace}}/libs/Qt/lib/libQt5Network.so.5.15.2"
 
+
       - name: Copy QT Widgets .so
         uses: canastro/copy-file-action@master
         with:
