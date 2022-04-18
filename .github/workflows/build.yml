@@ -32,6 +32,10 @@ jobs:
 #          source: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/steamworks/redistributable_bin/linux64/libsteam_api.so"
 #          target: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so"
 
+      - name: Copy Steamworks .so
+        run: |
+          cp "${{github.workspace}}/libs/Steam-Workshop-API/sdk/steamworks/redistributable_bin/linux64/libsteam_api.so" "${{github.workspace}}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so" 
+
       - name: Copy QT Network .so
         run: | 
           cp "${{env.Qt5_DIR}}/lib/libQt5Network.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Network.so.5.15.2" 
