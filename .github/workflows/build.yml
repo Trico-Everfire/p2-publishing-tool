@@ -63,13 +63,6 @@ jobs:
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
 
-      - name: Create Symlinks
-        run: |
-          ln -s "${{github.workspace}}/build/libQt5Core.so.5.15.2" "${{github.workspace}}/build/libQt5Core.so.5" |
-          ln -s "${{github.workspace}}/build/libQt5Gui.so.5.15.2" "${{github.workspace}}/build/libQt5Gui.so.5" |
-          ln -s "${{github.workspace}}/build/libQt5Widgets.so.5" "${{github.workspace}}/build/libQt5Widgets.so.5" |
-          ln -s "${{github.workspace}}/build/libQt5Network.so.5.15.2" "${{github.workspace}}/build/libQt5Network.so.5"
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -78,6 +71,14 @@ jobs:
             ${{github.workspace}}/build/p2_map_publisher
             ${{github.workspace}}/build/Credits.txt
             ${{github.workspace}}/build/*.s*
+
+      - name: Create Symlinks
+        run: |
+          ln -s "${{github.workspace}}/build/libQt5Core.so.5.15.2" "${{github.workspace}}/build/libQt5Core.so.5" |
+          ln -s "${{github.workspace}}/build/libQt5Gui.so.5.15.2" "${{github.workspace}}/build/libQt5Gui.so.5" |
+          ln -s "${{github.workspace}}/build/libQt5Widgets.so.5" "${{github.workspace}}/build/libQt5Widgets.so.5" |
+          ln -s "${{github.workspace}}/build/libQt5Network.so.5.15.2" "${{github.workspace}}/build/libQt5Network.so.5"
+
 
   build-msvc:
     strategy:
