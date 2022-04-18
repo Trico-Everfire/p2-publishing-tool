@@ -32,7 +32,7 @@ jobs:
 
       - name: setup build folder
         run: |
-        mkdir "{{github.workspace}}/build/"
+          mkdir "{{github.workspace}}/build/"
 
       - name: Copy QT Network .so
         run: | 
