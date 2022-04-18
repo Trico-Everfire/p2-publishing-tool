@@ -65,10 +65,10 @@ jobs:
 
       - name: Create Symlinks
         run: |
-          ln -s "${{env.Qt5_DIR}}/lib/libQt5Core.so.5.15.2" "${{github.workspace}}/build/libQt5Core.so.5" |
-          ln -s "${{env.Qt5_DIR}}/lib/libQt5Gui.so.5.15.2" "${{github.workspace}}/build/libQt5Gui.so.5" |
-          ln -s "${{env.Qt5_DIR}}/lib/libQt5Widgets.so.5.15.2" "${{github.workspace}}/build/libQt5Widgets.so.5" |
-          ln -s "${{env.Qt5_DIR}}/lib/libQt5Network.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Network.so.5.15.2"
+          ln -s "${{github.workspace}}/build/libQt5Core.so.5" "${{github.workspace}}/build/libQt5Core.so.5" |
+          ln -s "${{github.workspace}}/build/libQt5Gui.so.5" "${{github.workspace}}/build/libQt5Gui.so.5" |
+          ln -s "${{github.workspace}}/build/libQt5Widgets.so.5" "${{github.workspace}}/build/libQt5Widgets.so.5" |
+          ln -s "${{github.workspace}}/build/libQt5Network.so.5" "${{github.workspace}}/libs/Qt/libQt5Network.so.5.15.2"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
