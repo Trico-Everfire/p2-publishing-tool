@@ -33,24 +33,20 @@ jobs:
 #          target: "${{github.workspace}}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so"
 
       - name: Copy QT Network .so
-        uses: actions/checkout@master
         run: | 
           cp "${{env.Qt5_DIR}}/lib/libQt5Network.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Network.so.5.15.2" 
 
 
       - name: Copy QT Widgets .so
-        uses: actions/checkout@master
         run: |
           cp "${{env.Qt5_DIR}}/lib/libQt5Widgets.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Widgets.so.5.15.2" 
 
       - name: Copy QT Gui .so
-        uses: actions/checkout@master
         run: |
           cp "${{env.Qt5_DIR}}/lib/libQt5Gui.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Gui.so.5.15.2" 
 
 
       - name: Copy QT Core .so
-        uses: actions/checkout@master
         run: |
           cp "${{env.Qt5_DIR}}/lib/libQt5Core.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Core.so.5.15.2" 
 
