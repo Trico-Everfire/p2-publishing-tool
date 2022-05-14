@@ -1,5 +1,5 @@
 if(UNIX)
-  configure_file("${PROJECT_SOURCE_DIR}/libs/ICU/libicudata.so.56.1" "${CMAKE_BINARY_DIR}/libicudata.so.56" COPYONLY)
-  configure_file("${PROJECT_SOURCE_DIR}/libs/ICU/libicui18n.so.56.1" "${CMAKE_BINARY_DIR}/libicui18n.so.56" COPYONLY)
-  configure_file("${PROJECT_SOURCE_DIR}/libs/ICU/libicuuc.so.56.1" "${CMAKE_BINARY_DIR}/libicuuc.so.56" COPYONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/dependecies/icu/source/lib/libicudata.so.56.1" "${CMAKE_BINARY_DIR}/libicudata.so.56" COPYONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/dependecies/icu/source/lib/libicui18n.so.56.1" "${CMAKE_BINARY_DIR}/libicui18n.so.56" COPYONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/dependecies/icu/source/lib/libicuuc.so.56.1" "${CMAKE_BINARY_DIR}/libicuuc.so.56" COPYONLY)
 endif()
