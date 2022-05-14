@@ -2,9 +2,8 @@ build/
 .vscode 
 .idea
 .ccls-cache
-libs/Steam-Workshop-API/sdk/
-libs/Qt/**
-!libs/Qt/Readme.txt
+libs/**
+!libs/*/Readme.txt
 
 
 
