@@ -20,7 +20,6 @@ endif()
 message("Using ${QT_INCLUDE} as our Qt include dir")
 
 if(UNIX)
-  # TODO: Someone have to figure out why the names are not ebing copied correctly (https://github.com/Trico-Everfire/p2-publishing-tool/issues/6)
     configure_file("${PROJECT_SOURCE_DIR}/dependecies/qt5/qtbase/lib/libQt5Core.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Core.so.5" COPYONLY)
 	configure_file("${PROJECT_SOURCE_DIR}/dependecies/qt5/qtbase/lib/libQt5Gui.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Gui.so.5" COPYONLY)
 	configure_file("${PROJECT_SOURCE_DIR}/dependecies/qt5/qtbase/lib/libQt5Widgets.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Widgets.so.5" COPYONLY)
