@@ -1,0 +1,6 @@
+[submodule "dependecies/icu"]
+	path = dependecies/icu
+	url = https://github.com/unicode-org/icu
+[submodule "dependecies/qt5"]
+	path = dependecies/qt5
+	url = https://code.qt.io/qt/qt5.git

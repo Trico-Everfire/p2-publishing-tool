@@ -52,7 +52,7 @@ set(SRC
 	dialogs/P2PTIDialog.h
 	P2Publish.cpp
 )
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network PATHS dependecies/qt5/qtbase/lib/cmake/Qt5)
 
 set(APP_ICON_RESOURCE_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR}/res/appicon.rc)
 
