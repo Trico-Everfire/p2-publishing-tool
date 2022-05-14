@@ -1,6 +1,6 @@
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network PATHS dependecies/qt5/qtbase/lib/cmake/Qt5)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network PATHS ${PROJECT_SOURCE_DIR}/dependecies/qt5/qtbase/lib/cmake/Qt5)
 
 if(UNIX)
 	set(QT_INCLUDE "/usr/include/x86_64-linux-gnu/qt5")
