@@ -127,18 +127,15 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		// 	return;
 		// }
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
-		if ( file.size() > 104857600 )
-		{
-			QByteArray data = file.readAll();
-			QByteArray first = data.left( 104857600 );				 // gets the first 100mb.
-			QByteArray rest = data.right( data.size() - 104857600 ); // gets the rest.
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, first.constData(), 104857600 );
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, rest.constData(), data.size() - 104857600 );
-		}
-		else
-		{
-			QByteArray data = file.readAll();
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.constData(), data.size() );
+		QByteArray data = file.readAll();
+		int i = 1;
+		for(qint64 filesize = 0; filesize < file.size(); filesize += 104857600){
+			if (file.size() - (104857600 * i) < 104857600){
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(filesize,(104857600 * i)), file.size() - (104857600 * i) );
+			} else {
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(filesize,(104857600 * i)), 104857600 );
+			}
+			i++;
 		}
 		qInfo() << SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle );
 
