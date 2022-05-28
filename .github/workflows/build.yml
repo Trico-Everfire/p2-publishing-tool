@@ -1,7 +1,7 @@
 name: Build
 on:
   push:
-    branches: [ master ]
+    branches: [ master, remove-file-limit ]
   pull_request:
     branches: [ master ]
   workflow_dispatch: # nothing here
