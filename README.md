@@ -10,6 +10,7 @@ With this cross compatible uploading tool you'll be able to upload to the portal
 - Multiple preview Videos
 - Workshop Visibility
 - Toggleable option for PTI requirement.
+- Build script.
 
 ### Currently the application is in alpha, therefor a lot of base features are missing:
 - Image compression for images.
@@ -22,13 +23,17 @@ With this cross compatible uploading tool you'll be able to upload to the portal
 
 ## From linux
 
-The build tool called cmaḱe will be required for the build procedure, with the folliwing packages
+The build tool called cmake will be required for the build procedure, with the folliwing packages
    - libxbc-devel
 and the packagues nesesary to build the submodules. 
 
-Note, that the packages installation and exact names may vary from sitro to distro.
+Note, that the packages installation and exact names may vary from distro to distro.
 
 Important to not that there is a bug in the Qt submodule, there is a fix in the stackoverflow entry: [fix](https://stackoverflow.com/questions/52002432/wrong-path-for-qt-mkspecs-when-generating-makefile-for-vtk-under-windows-10)
+
+Compile the ICU submodule.
+
+Compile the base submodule of the Qt submodule with the ICU binaries.
 
 Now run
 ```
