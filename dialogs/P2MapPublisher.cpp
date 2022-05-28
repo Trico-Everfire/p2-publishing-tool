@@ -121,11 +121,11 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 			return;
 		}
 		file.open( QFile::ReadOnly );
-		if ( file.size() > 209715200 )
-		{
-			qInfo() << "File too large!";
-			return;
-		}
+		// if ( file.size() > 209715200 )
+		// {
+		// 	qInfo() << "File too large!";
+		// 	return;
+		// }
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
 		if ( file.size() > 104857600 )
 		{
@@ -424,11 +424,11 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		return;
 	}
 	
-	if ( file.size() > 209715200 )
-	{
-		QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
-		return;
-	}
+	// if ( file.size() > 209715200 )
+	// {
+	// 	QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
+	// 	return;
+	// }
 	BSPHeaderStruct_t castedLump{};
 	const auto bArray = file.readAll();
 	memcpy(&castedLump,bArray.constData(),sizeof(BSPHeaderStruct_t));
@@ -499,11 +499,11 @@ void CP2MapPublisher::onOKPressed()
 			QMessageBox::warning( this, "File Not Available!", "This BSP is not available, could not be read..." );
 			return;
 		}
-		if ( file.size() > 209715200 )
-		{
-			QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
-			return;
-		}
+		// if ( file.size() > 209715200 )
+		// {
+		// 	QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
+		// 	return;
+		// }
 		QDataStream stream { &file };
 		QByteArray bArray( (int) file.size(), 0 );
 		stream.readRawData( bArray.data(), bArray.size() );
