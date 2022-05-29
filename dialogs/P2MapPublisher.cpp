@@ -1,5 +1,5 @@
 #include "dialogs/P2MapPublisher.h"
-
+#include <cmath>
 #include "P2DialogConfig.h"
 
 using namespace ui;
@@ -111,6 +111,7 @@ void CP2MapPublisher::LoadCreatingItem()
 
 void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 {
+	constexpr const int fileChunkSize = 104857600; // 100mb
 	if ( !defaultFileLocBSP.startsWith( "mymaps/" ) )
 	{
 		QFile file( defaultFileLocBSP );
@@ -121,24 +122,34 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 			return;
 		}
 		file.open( QFile::ReadOnly );
-		if ( file.size() > 209715200 )
-		{
-			qInfo() << "File too large!";
-			return;
-		}
+		// if ( file.size() > 209715200 )
+		// {
+		// 	qInfo() << "File too large!";
+		// 	return;
+		// }
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
-		if ( file.size() > 104857600 )
-		{
-			QByteArray data = file.readAll();
-			QByteArray first = data.left( 104857600 );				 // gets the first 100mb.
-			QByteArray rest = data.right( data.size() - 104857600 ); // gets the rest.
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, first.constData(), 104857600 );
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, rest.constData(), data.size() - 104857600 );
-		}
-		else
-		{
-			QByteArray data = file.readAll();
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.constData(), data.size() );
+		QByteArray data = file.readAll();
+		int amount = data.size();
+		int i = 0;
+		while (1) {
+			qInfo() << "iteration "+QString(std::to_string(i).c_str());
+			
+			if(amount < fileChunkSize){
+				//if we start with a lower than 100mb file, we throw in the entire buffer.
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.constData(), file.size());
+				break;
+			}
+			//we shove 100MB at the time into the stream.
+			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(fileChunkSize * i,(fileChunkSize * (i + 1))).constData(), fileChunkSize );
+			amount -= fileChunkSize;
+			if(amount == 0) break;//if the file happens to be a multiple of 100mb exactly, we break when no data is left.
+			if(amount < fileChunkSize){
+				//if the last bit of data is below 100mb, we throw in the remainder amount.
+				qInfo() << amount;
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.right(amount).constData(), amount);
+				break;
+			}
+			i++;
 		}
 		qInfo() << SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle );
 
@@ -424,11 +435,11 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		return;
 	}
 	
-	if ( file.size() > 209715200 )
-	{
-		QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
-		return;
-	}
+	// if ( file.size() > 209715200 )
+	// {
+	// 	QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
+	// 	return;
+	// }
 	BSPHeaderStruct_t castedLump{};
 	const auto bArray = file.readAll();
 	memcpy(&castedLump,bArray.constData(),sizeof(BSPHeaderStruct_t));
@@ -499,11 +510,11 @@ void CP2MapPublisher::onOKPressed()
 			QMessageBox::warning( this, "File Not Available!", "This BSP is not available, could not be read..." );
 			return;
 		}
-		if ( file.size() > 209715200 )
-		{
-			QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
-			return;
-		}
+		// if ( file.size() > 209715200 )
+		// {
+		// 	QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
+		// 	return;
+		// }
 		QDataStream stream { &file };
 		QByteArray bArray( (int) file.size(), 0 );
 		stream.readRawData( bArray.data(), bArray.size() );
