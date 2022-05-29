@@ -129,19 +129,27 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		// }
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
 		QByteArray data = file.readAll();
-		int amount = ceil(data.size() / 104857600);
-		for(qint64 i = 0; i < amount; i++){
-			if(amount == 1){
-				//if file is below 100mb, we use the entire buffer instead.
-				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data, file.size());
-				continue;
+		int amount = data.size();
+		int i = 0;
+		while (1) {
+			qInfo() << "iteration "+QString(std::to_string(i).c_str());
+			
+			if(amount < fileChunkSize){
+				//if we start with a lower than 100mb file, we throw in the entire buffer.
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.constData(), file.size());
+				break;
 			}
-			if (i == amount){
-				//final chunk will be smaller or equal so has to be handled seperately.
-				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(fileChunkSize * i,(fileChunkSize * (i + 1))), file.size() - (fileChunkSize * i) );
-			} else {
-				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(fileChunkSize * i,(fileChunkSize * (i + 1))), fileChunkSize );
+			//we shove 100MB at the time into the stream.
+			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(fileChunkSize * i,(fileChunkSize * (i + 1))).constData(), fileChunkSize );
+			amount -= fileChunkSize;
+			if(amount == 0) break;//if the file happens to be a multiple of 100mb exactly, we break when no data is left.
+			if(amount < fileChunkSize){
+				//if the last bit of data is below 100mb, we throw in the remainder amount.
+				qInfo() << amount;
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.right(amount).constData(), amount);
+				break;
 			}
+			i++;
 		}
 		qInfo() << SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle );
 
