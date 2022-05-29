@@ -1,5 +1,5 @@
 #include "dialogs/P2MapPublisher.h"
-
+#include <cmath>
 #include "P2DialogConfig.h"
 
 using namespace ui;
@@ -129,12 +129,18 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		// }
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
 		QByteArray data = file.readAll();
-		for(qint64 filesize = 0, i = 0; filesize < file.size(); filesize += fileChunkSize, i++){
-			i++;
-			if (file.size() - (fileChunkSize * i) <= fileChunkSize){
-				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(filesize,(fileChunkSize * i)), file.size() - (fileChunkSize * i) );
+		int amount = ceil(data.size() / 104857600);
+		for(qint64 i = 0; i < amount; i++){
+			if(amount == 1){
+				//if file is below 100mb, we use the entire buffer instead.
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data, file.size());
+				continue;
+			}
+			if (i == amount){
+				//final chunk will be smaller or equal so has to be handled seperately.
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(fileChunkSize * i,(fileChunkSize * (i + 1))), file.size() - (fileChunkSize * i) );
 			} else {
-				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(filesize,(fileChunkSize * i)), fileChunkSize );
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(fileChunkSize * i,(fileChunkSize * (i + 1))), fileChunkSize );
 			}
 		}
 		qInfo() << SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle );
