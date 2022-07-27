@@ -26,7 +26,7 @@ namespace ui
 		CP2MapMainMenu( QWidget *pParent );
 		~CP2MapMainMenu();
 		std::map<int, SteamUGCDetails_t> SUGCD;
-		static const AppId_t ConsumerID = 620;
+		static const AppId_t ConsumerID = 440000;
 		void runSetCallbacks();
 		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
 		QTreeWidget *m_treeWidget;
