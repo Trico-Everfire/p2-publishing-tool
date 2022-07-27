@@ -12,7 +12,7 @@ CP2MapMainMenu::CP2MapMainMenu( QWidget *pParent ) :
 	{
 		QTextStream stream( &file );
 		// todo: maybe don't hardcode this at some point?
-		stream << "644" << Qt::endl;
+		stream << "440000" << Qt::endl;
 		file.close();
 	}
 
