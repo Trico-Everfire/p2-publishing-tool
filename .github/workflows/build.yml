@@ -1,7 +1,7 @@
 name: Build
 on:
   push:
-    branches: [ master ]
+    branches: [ master, p2ce-uploader ]
   workflow_dispatch: # nothing here
 jobs:
   build-linux:
