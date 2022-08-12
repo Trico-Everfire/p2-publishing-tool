@@ -89,7 +89,7 @@ CP2MapMainMenu::~CP2MapMainMenu()
 
 void CP2MapMainMenu::treeSelectionChanged()
 {
-	//If the selected items is larger than 1, enable the delete button.
+	// If the selected items is larger than 1, enable the delete button.
 	if ( m_treeWidget->selectedItems().length() > 0 )
 	{
 		m_treeWidget->selectedItems()[0];
@@ -106,11 +106,12 @@ void CP2MapMainMenu::treeSelectionChanged()
 void CP2MapMainMenu::onAddPressed()
 {
 	CP2MapPublisher *publisher = new CP2MapPublisher( this );
-	QMetaObject::Connection publisherConnection = connect(publisher,&CP2MapPublisher::mapPublisherClosed,this,[&](){
-		qInfo() << "logged";
-		onRefreshPressed();
-		disconnect(publisherConnection);
-	});
+	QMetaObject::Connection publisherConnection = connect( publisher, &CP2MapPublisher::mapPublisherClosed, this, [&]()
+														   {
+															   qInfo() << "logged";
+															   onRefreshPressed();
+															   disconnect( publisherConnection );
+														   } );
 	publisher->exec();
 }
 
@@ -140,12 +141,12 @@ void CP2MapMainMenu::onDeletePressed()
 		int itemIndex = item->data( 1, Qt::UserRole ).toInt();
 		SteamUGCDetails_t Details = SUGCD.at( itemIndex );
 		SteamAPICall_t call = SteamUGC()->DeleteItem( Details.m_nPublishedFileId );
-		m_CallResultDeleteItem.Set(call,this, &CP2MapMainMenu::OnDeleteItem);
+		m_CallResultDeleteItem.Set( call, this, &CP2MapMainMenu::OnDeleteItem );
 		SteamHelper::StartLoopCall();
 	}
 }
 
-void CP2MapMainMenu::OnDeleteItem(DeleteItemResult_t *pItem, bool bFailure)
+void CP2MapMainMenu::OnDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
 {
 	onRefreshPressed();
 }
@@ -165,11 +166,12 @@ void CP2MapMainMenu::onEditPressed()
 	qInfo() << Details.m_pchFileName;
 	CP2MapPublisher *publisher = new CP2MapPublisher( this, true );
 	publisher->LoadExistingDetails( Details, itemIndex );
-	QMetaObject::Connection publisherConnection = connect(publisher,&CP2MapPublisher::mapPublisherClosed,this,[&](){
-		qInfo() << "logged";
-		onRefreshPressed();
-		disconnect(publisherConnection);
-	});
+	QMetaObject::Connection publisherConnection = connect( publisher, &CP2MapPublisher::mapPublisherClosed, this, [&]()
+														   {
+															   qInfo() << "logged";
+															   onRefreshPressed();
+															   disconnect( publisherConnection );
+														   } );
 	publisher->exec();
 }
 
@@ -224,7 +226,7 @@ void CP2MapMainMenu::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bo
 	for ( int index = 0; index < pQuery->m_unNumResultsReturned; index++ )
 	{
 		// Get the workshop item from index
-		SteamUGCDetails_t pDetails{};
+		SteamUGCDetails_t pDetails {};
 		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, index, &pDetails );
 
 		QDateTime time = QDateTime::fromSecsSinceEpoch( pDetails.m_rtimeUpdated );

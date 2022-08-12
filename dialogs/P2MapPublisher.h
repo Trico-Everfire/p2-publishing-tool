@@ -8,25 +8,24 @@
 #include "dialogs/P2PTIDialog.h"
 #include "dialogs/P2PublisherAdvancedOptions.h"
 
+#include <QBuffer>
 #include <QCheckBox>
+#include <QCloseEvent>
 #include <QDesktopServices>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QImageReader>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
-#include <QBuffer>
-#include <QImageReader>
-#include <QtNetwork/QNetworkAccessManager>
 #include <QUrl>
+#include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
-#include <QCloseEvent>
 #include <sstream>
-
 
 namespace ui
 {
@@ -55,7 +54,7 @@ namespace ui
 		void UpdateItem( PublishedFileId_t itemID );
 		void LoadEditItem();
 		uint32 iCount = 0;
-		std::vector<std::string> splitString(const std::string& input, char delimiter);
+		std::vector<std::string> splitString( const std::string &input, char delimiter );
 
 		// Every callback starts with the type sent and a bool
 		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
@@ -75,8 +74,9 @@ namespace ui
 		CCallResult<CP2MapPublisher, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
 	signals:
 		void mapPublisherClosed();
+
 	private:
-		SteamUGCDetails_t m_editItemDetails{};
+		SteamUGCDetails_t m_editItemDetails {};
 		CP2PublisherAdvancedOptions *AO;
 		QDialog *m_advancedOptionsWindow;
 	private slots:
@@ -86,6 +86,6 @@ namespace ui
 		void onClosePressed();
 		static void onAgreementButtonPressed();
 		void onAdvancedClicked();
-		void closeEvent( QCloseEvent* event );
+		void closeEvent( QCloseEvent *event );
 	};
 } // namespace ui
