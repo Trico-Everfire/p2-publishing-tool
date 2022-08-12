@@ -282,6 +282,11 @@ namespace ui
 {
 	class CP2PublisherAdvancedOptions : public Ui_Advanced
 	{
+	public:
+		void disableTagWidget(bool disable){
+			toolButton->setDisabled(disable);
+			lineEdit->setDisabled(disable);
+		}
 	};
 } // namespace ui
 

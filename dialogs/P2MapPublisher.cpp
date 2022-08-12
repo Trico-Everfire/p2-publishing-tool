@@ -43,7 +43,7 @@ CP2MapPublisher::CP2MapPublisher( QWidget *pParent, bool edit ) :
 	pAdvancedOptionsButton = new QPushButton( this );
 	pAdvancedOptionsButton->setText( tr( "Advanced Options." ) );
 	pAdvancedOptionsButton->setFixedSize( 478 / 2, 40 );
-	pAdvancedOptionsButton->setDisabled( true );
+	AO->disableTagWidget( true );
 
 	pSteamToSAgreement = new QCheckBox( tr( "I accept the terms of the Steam Workshop Contribution Agreement." ), this );
 
@@ -313,7 +313,7 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 		AO->treeWidget->addTopLevelItem( item );
 	}
 
-	pAdvancedOptionsButton->setDisabled( false );
+	AO->disableTagWidget( false );
 
 	std::string dir = QDir::currentPath().toStdString() + "/resources/" + std::to_string( details.m_nPublishedFileId ) + "_Image0.png";
 	SteamAPICall_t res = SteamRemoteStorage()->UGCDownloadToLocation( details.m_hPreviewFile, dir.c_str(), 0 );
@@ -455,12 +455,12 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 	QString Entities = bArray.constData() + castedLump.lumps[0].fileOffset;
 	if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
 	{
-//		m_bspHasPTIInstance = false;
-//		QDialog *dialog = new QDialog( this );
-//		PTIDialogSetup *PTI = new PTIDialogSetup();
-//		PTI->setupUi( dialog );
-//		dialog->exec();
-//		return;
+		m_bspHasPTIInstance = false;
+		QDialog *dialog = new QDialog( this );
+		PTIDialogSetup *PTI = new PTIDialogSetup();
+		PTI->setupUi( dialog );
+		dialog->exec();
+		return;
 	}
 
 	ListInitResponse res = P2ElementParser::initialiseElementList();
@@ -602,7 +602,7 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 	//	}
 
 	m_bspHasPTIInstance = true;
-	pAdvancedOptionsButton->setDisabled( false );
+	AO->disableTagWidget( false );
 	pFileEntry->setText( filePath );
 }
 
