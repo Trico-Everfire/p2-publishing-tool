@@ -44,6 +44,7 @@ namespace ui
 		QLineEdit *pFileEntry;
 		QLineEdit *pTitleLine;
 		QTextEdit *pDescLine;
+		QPushButton *pAdvancedOptionsButton;
 		QString defaultFileLocBSP = "./";
 		QString defaultFileLocIMG = "./";
 		QCheckBox *pSteamToSAgreement;

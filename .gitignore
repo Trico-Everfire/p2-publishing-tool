@@ -5,7 +5,13 @@ build/
 libs/Steam-Workshop-API/sdk/
 libs/Qt/**
 !libs/Qt/Readme.txt
-
+build_old/
+.cmake/
+libs/JSON/
+*.txt.user
+Testing/
+configs/
+libs/SpeedyKeyV/**
 
 
 # CMake with Visual Studio
@@ -28,4 +34,3 @@ CMakeSettings.json
 
 # CMake with CLion
 cmake-build-*/
-*.bruh_xd

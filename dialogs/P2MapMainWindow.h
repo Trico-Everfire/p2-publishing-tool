@@ -52,3 +52,4 @@ namespace ui
 		void treeSelectionChanged();
 	};
 } // namespace ui
+
