@@ -455,12 +455,12 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 	QString Entities = bArray.constData() + castedLump.lumps[0].fileOffset;
 	if ( !Entities.contains( "@relay_pti_level_end" ) && !AO->checkBox_3->isChecked() )
 	{
-		m_bspHasPTIInstance = false;
-		QDialog *dialog = new QDialog( this );
-		PTIDialogSetup *PTI = new PTIDialogSetup();
-		PTI->setupUi( dialog );
-		dialog->exec();
-		return;
+//		m_bspHasPTIInstance = false;
+//		QDialog *dialog = new QDialog( this );
+//		PTIDialogSetup *PTI = new PTIDialogSetup();
+//		PTI->setupUi( dialog );
+//		dialog->exec();
+//		return;
 	}
 
 	ListInitResponse res = P2ElementParser::initialiseElementList();
@@ -527,22 +527,40 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 			if(isCoop && !tags.contains("Cooperative")){
 				tags << "Cooperative";
 			}
+//			qInfo() << keyvals->Get( "entities" )["prop_tractor_beam"].key.string;
+//			for(int i = 0; i < keyvals->Get( "entities" ).childCount; i++){
+//				auto entityClassName = entity->Get( "entity" ).Get( "classname" ).value.string;
+//				if(QString(keyvals->Get( "entities" )[i].key.string).compare(entityClassName)){
+//					qInfo() << keyvals->Get( "entities" )[i].key.string;
+//				}
+//			}
+
 
 			for ( int i = 0; i < keyvals->Get( "entities" ).childCount; i++ )
 			{
-				char *str = keyvals->Get( "entities" )[i].key.string;
-				if ( QString( entity->Get( "entity" ).Get( "classname" ).value.string ) == ( str ) )
+//				QRegExp r(keyvals->Get( "entities" )[i].key.string);
+//				qInfo() << keyvals->Get( "entities" )[i].key.string;
+//				qInfo() << r.exactMatch(QString( entity->Get( "entity" ).Get( "classname" ).value.string ));
+//				qInfo() << entity->Get( "entity" ).Get( "classname" ).value.string;
+				char *str = entity->Get( "entity" ).Get( "classname" ).value.string;
+				if (QString(keyvals->Get( "entities" )[i].key.string).compare(str) == 0)
 				{
+
+					//qInfo() << (QString(entity->Get( "entity" ).Get( "classname" ).value.string ));
+
 					if ( keyvals->Get( "entities" )[i].childCount != 1 )
 						for ( int j = 0; j < keyvals->Get( "entities" )[i].childCount; j++ )
 						{
-							if ( QString( keyvals->Get( "entities" )[i][j].key.string ) == "tag" )
+							//qInfo() << keyvals->Get( "entities" )[i][j].value.string;
+							if ( QString( keyvals->Get( "entities" )[i][j].key.string ).compare("tag") == 0)
 								continue;
 							if ( QString( entity->Get( "entity" )[keyvals->Get( "entities" )[i][j].key.string].value.string ).isEmpty() )
 								continue;
 							QString a = QString( keyvals->Get( "entities" )[i][j].value.string );
 							QString b = QString( entity->Get( "entity" )[keyvals->Get( "entities" )[i][j].key.string].value.string );
-							tagSuffices = a == b;
+							qInfo() << a;
+							qInfo() << b;
+							tagSuffices = a.compare(b, Qt::CaseInsensitive) == 0;
 						}
 					else
 						tagSuffices = true;
