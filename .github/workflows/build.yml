@@ -70,6 +70,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
         
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+        
       - name: Install Qt5
         uses: jurplel/install-qt-action@v2.14.0
         with:
