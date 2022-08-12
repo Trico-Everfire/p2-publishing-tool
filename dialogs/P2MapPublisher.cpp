@@ -551,8 +551,8 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 					if ( keyvals->Get( "entities" )[i].childCount != 1 )
 						for ( int j = 0; j < keyvals->Get( "entities" )[i].childCount; j++ )
 						{
-							//qInfo() << keyvals->Get( "entities" )[i][j].value.string;
-							if ( QString( keyvals->Get( "entities" )[i][j].key.string ).compare("tag") == 0)
+							// qInfo() << keyvals->Get( "entities" )[i][j].value.string;
+							if ( QString( keyvals->Get( "entities" )[i][j].key.string ).compare( "tag" ) == 0 )
 								continue;
 							if ( QString( entity->Get( "entity" )[keyvals->Get( "entities" )[i][j].key.string].value.string ).isEmpty() )
 								continue;
@@ -560,8 +560,9 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 							QString b = QString( entity->Get( "entity" )[keyvals->Get( "entities" )[i][j].key.string].value.string );
 							qInfo() << a;
 							qInfo() << b;
-							tagSuffices = a.compare(b, Qt::CaseInsensitive) == 0;
-						}
+							tagSuffices = a.compare( b, Qt::CaseInsensitive ) == 0;
+							if(!tagSuffices) break;
+					}
 					else
 						tagSuffices = true;
 					// qInfo() << keyvals->Get("entities")[i]["tag"].value.string;
