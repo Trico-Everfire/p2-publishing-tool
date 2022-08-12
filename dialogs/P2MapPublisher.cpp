@@ -1,6 +1,11 @@
 #include "dialogs/P2MapPublisher.h"
-#include <cmath>
+
 #include "P2DialogConfig.h"
+#include "P2ElementParser.h"
+
+#include <KeyValue.h>
+#include <cmath>
+#include <regex>
 
 using namespace ui;
 
@@ -29,14 +34,16 @@ CP2MapPublisher::CP2MapPublisher( QWidget *pParent, bool edit ) :
 	m_advancedOptionsWindow = new QDialog( this );
 	AO = new CP2PublisherAdvancedOptions();
 	AO->setupUi( m_advancedOptionsWindow );
+	AO->treeWidget->setSortingEnabled( false );
 
 	auto pBrowseButton = new QPushButton( this );
 	pBrowseButton->setText( tr( "Browse..." ) );
-	pBrowseButton->setFixedSize( 478/ 2, 20 );
+	pBrowseButton->setFixedSize( 478 / 2, 20 );
 
-	auto pAdvancedOptionsButton = new QPushButton( this );
+	pAdvancedOptionsButton = new QPushButton( this );
 	pAdvancedOptionsButton->setText( tr( "Advanced Options." ) );
-	pAdvancedOptionsButton->setFixedSize( 478/ 2, 40 );
+	pAdvancedOptionsButton->setFixedSize( 478 / 2, 40 );
+	pAdvancedOptionsButton->setDisabled( true );
 
 	pSteamToSAgreement = new QCheckBox( tr( "I accept the terms of the Steam Workshop Contribution Agreement." ), this );
 
@@ -122,31 +129,31 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 			return;
 		}
 		file.open( QFile::ReadOnly );
-		// if ( file.size() > 209715200 )
-		// {
-		// 	qInfo() << "File too large!";
-		// 	return;
-		// }
+
 		UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( ( QString( "mymaps/" ) + info.fileName() ).toStdString().c_str() );
 		QByteArray data = file.readAll();
 		int amount = data.size();
 		int i = 0;
-		while (1) {
-			qInfo() << "iteration "+QString(std::to_string(i).c_str());
-			
-			if(amount < fileChunkSize){
-				//if we start with a lower than 100mb file, we throw in the entire buffer.
-				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.constData(), file.size());
+		while ( 1 )
+		{
+			qInfo() << "iteration " + QString( std::to_string( i ).c_str() );
+
+			if ( amount < fileChunkSize )
+			{
+				// if we start with a lower than 100mb file, we throw in the entire buffer.
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.constData(), file.size() );
 				break;
 			}
-			//we shove 100MB at the time into the stream.
-			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid(fileChunkSize * i,(fileChunkSize * (i + 1))).constData(), fileChunkSize );
+			// we shove 100MB at the time into the stream.
+			qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.mid( fileChunkSize * i, ( fileChunkSize * ( i + 1 ) ) ).constData(), fileChunkSize );
 			amount -= fileChunkSize;
-			if(amount == 0) break;//if the file happens to be a multiple of 100mb exactly, we break when no data is left.
-			if(amount < fileChunkSize){
-				//if the last bit of data is below 100mb, we throw in the remainder amount.
+			if ( amount == 0 )
+				break; // if the file happens to be a multiple of 100mb exactly, we break when no data is left.
+			if ( amount < fileChunkSize )
+			{
+				// if the last bit of data is below 100mb, we throw in the remainder amount.
 				qInfo() << amount;
-				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.right(amount).constData(), amount);
+				qInfo() << SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, data.right( amount ).constData(), amount );
 				break;
 			}
 			i++;
@@ -189,7 +196,7 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 	}
 	SteamUGC()->SetItemVisibility( hUpdateHandle, visibility );
 
-	char* descr = strdup(AO->textEdit->toPlainText().toStdString().c_str());
+	char *descr = strdup( AO->textEdit->toPlainText().toStdString().c_str() );
 
 	SteamParamStringArray_t tags {};
 
@@ -201,7 +208,7 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		charray.push_back( strdup( ( *iterator2 )->text( 0 ).toStdString().c_str() ) );
 		++iterator2;
 	}
-	tags.m_nNumStrings = (int32) charray.size();
+	tags.m_nNumStrings = (int32)charray.size();
 	tags.m_ppStrings = (const char **)charray.data();
 
 	qInfo() << SteamUGC()->SetItemTags( hUpdateHandle, &tags );
@@ -230,18 +237,17 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 	while ( *iterator3 )
 	{
 		qInfo() << ( *iterator3 )->text( 0 );
-		SteamUGC()->AddItemPreviewVideo(hUpdateHandle, ( *iterator3 )->text( 0 ).toStdString().c_str());
+		SteamUGC()->AddItemPreviewVideo( hUpdateHandle, ( *iterator3 )->text( 0 ).toStdString().c_str() );
 		++iterator3;
 	}
 
-
 	qInfo() << "Reached Upadte Handle";
-	qInfo() << QString(descr);
-	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, (const char*) descr );
+	qInfo() << QString( descr );
+	SteamAPICall_t hApiSubmitItemHandle = SteamUGC()->SubmitItemUpdate( hUpdateHandle, (const char *)descr );
 	m_CallResultSubmitItemUpdate.Set( hApiSubmitItemHandle, this, &CP2MapPublisher::OnSubmitItemUpdate );
 	SteamHelper::StartLoopCall();
 	qInfo() << "End of Function Reached!";
-	free(descr);
+	free( descr );
 }
 
 void CP2MapPublisher::OnCreateItem( CreateItemResult_t *pItem, bool bFailure )
@@ -300,12 +306,14 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 	std::vector<std::string> vector = splitString( details.m_rgchTags, ',' );
 	for ( const std::string &str : vector )
 	{
-		if ( str == "Singleplayer" )
-			continue;
 		auto item = new QTreeWidgetItem( 0 );
 		item->setText( 0, QString( str.c_str() ) );
+		if ( str == "Singleplayer" || str == "Cooperative" || str == "Custom Visuals" )
+			item->setDisabled( true );
 		AO->treeWidget->addTopLevelItem( item );
 	}
+
+	pAdvancedOptionsButton->setDisabled( false );
 
 	std::string dir = QDir::currentPath().toStdString() + "/resources/" + std::to_string( details.m_nPublishedFileId ) + "_Image0.png";
 	SteamAPICall_t res = SteamRemoteStorage()->UGCDownloadToLocation( details.m_hPreviewFile, dir.c_str(), 0 );
@@ -350,7 +358,7 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 			QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( pchUrl ) ) );
 			QEventLoop loop;
 			QObject::connect( reply, SIGNAL( finished() ), &loop, SLOT( quit() ) );
-			QObject::connect( reply, SIGNAL( error(QNetworkReply::NetworkError) ), &loop, SLOT( quit() ) );
+			QObject::connect( reply, SIGNAL( error( QNetworkReply::NetworkError ) ), &loop, SLOT( quit() ) );
 			loop.exec();
 
 			QImage image;
@@ -434,15 +442,10 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		QMessageBox::warning( this, "File Not Available!", "This BSP is not available, could not be read..." );
 		return;
 	}
-	
-	// if ( file.size() > 209715200 )
-	// {
-	// 	QMessageBox::warning( this, "File Too Large!", "This BSP is too large, max 200MB." );
-	// 	return;
-	// }
-	BSPHeaderStruct_t castedLump{};
+
+	BSPHeaderStruct_t castedLump {};
 	const auto bArray = file.readAll();
-	memcpy(&castedLump,bArray.constData(),sizeof(BSPHeaderStruct_t));
+	memcpy( &castedLump, bArray.constData(), sizeof( BSPHeaderStruct_t ) );
 	qInfo() << castedLump.m_version;
 	if ( castedLump.m_version != 21 )
 	{
@@ -460,7 +463,127 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		return;
 	}
 
+	ListInitResponse res = P2ElementParser::initialiseElementList();
+	if ( res == ListInitResponse::FILEINVALID )
+		QMessageBox::warning( this, "Invalid KV File", "File elements.kv is Invalid. Using default configuration." );
+
+	if ( P2ElementParser::isInitialised() )
+	{
+
+		KeyValueRoot *keyvals = P2ElementParser::getElementList();
+		qInfo() << keyvals->Get( "entities" ).childCount;
+		//		keyvals.Solidify();
+
+		std::vector<QString> entArray {};
+		QString entityStack = "";
+		bool in_quotes = false;
+		int nests = 0;
+		for ( char character : Entities.toStdString() )
+		{
+			entityStack += character;
+			if ( character == '"' )
+			{
+				in_quotes = !in_quotes;
+				continue;
+			}
+			if ( !in_quotes && character == '{' )
+				nests++;
+			if ( !in_quotes && character == '}' )
+				nests--;
+			if ( nests < 0 )
+			{
+				QMessageBox::critical( this, "Invalid BSP", "Invalid BSP.\nThe parser failed to read the entity lump data properly, please recompile the BSP and try again." );
+				return;
+			};
+
+			if ( nests == 0 && character == '}' )
+			{
+				QString parsable = ( ( "\"entity\" " + entityStack ) );
+				entArray.push_back( parsable );
+				entityStack = "";
+			}
+		}
+
+		QStringList tags;
+
+		bool isCoop = false;
+		bool isSingeplayer = false;
+
+		for ( QString entityQStr : entArray )
+		{
+			KeyValueRoot *entity = new KeyValueRoot();
+			entity->Parse( entityQStr.toStdString().c_str() );
+			bool tagSuffices = false;
+
+			if(!isCoop)
+				isCoop = QString( entity->Get( "entity" ).Get( "classname" ).value.string ).compare("info_coop_spawn") == 0 ;
+
+			if(!isSingeplayer)
+				isSingeplayer = QString( entity->Get( "entity" ).Get( "classname" ).value.string ).compare("info_player_start") == 0;
+
+			if(isSingeplayer && !tags.contains("Singleplayer")){
+				tags << "Singleplayer";
+			}
+			if(isCoop && !tags.contains("Cooperative")){
+				tags << "Cooperative";
+			}
+
+			for ( int i = 0; i < keyvals->Get( "entities" ).childCount; i++ )
+			{
+				char *str = keyvals->Get( "entities" )[i].key.string;
+				if ( QString( entity->Get( "entity" ).Get( "classname" ).value.string ) == ( str ) )
+				{
+					if ( keyvals->Get( "entities" )[i].childCount != 1 )
+						for ( int j = 0; j < keyvals->Get( "entities" )[i].childCount; j++ )
+						{
+							if ( QString( keyvals->Get( "entities" )[i][j].key.string ) == "tag" )
+								continue;
+							if ( QString( entity->Get( "entity" )[keyvals->Get( "entities" )[i][j].key.string].value.string ).isEmpty() )
+								continue;
+							QString a = QString( keyvals->Get( "entities" )[i][j].value.string );
+							QString b = QString( entity->Get( "entity" )[keyvals->Get( "entities" )[i][j].key.string].value.string );
+							tagSuffices = a == b;
+						}
+					else
+						tagSuffices = true;
+					// qInfo() << keyvals->Get("entities")[i]["tag"].value.string;
+					if ( tagSuffices && !tags.contains(keyvals->Get( "entities" )[i]["tag"].value.string) )
+						tags << keyvals->Get( "entities" )[i]["tag"].value.string;
+				}
+			}
+		}
+
+
+		if(isCoop && isSingeplayer){
+			QMessageBox::critical( this, "Map Error: Conflicting Player Spawn", "Invalid BSP.\nThe parser failed to read the entity lump data properly, please recompile the BSP and try again." );
+			return;
+		}
+
+		if(!isCoop && !isSingeplayer){
+			QMessageBox::critical( this, "Map Error: No Player Spawn", "Info" );
+			return;
+		}
+
+		AO->treeWidget->clear();
+
+		qInfo() << tags;
+		std::reverse(tags.begin(), tags.end());
+		for(int i = 0; i < tags.count(); i++){
+			QTreeWidgetItem *___qtreewidgetitem1 = new QTreeWidgetItem(AO->treeWidget);
+			___qtreewidgetitem1->setText( 0, QCoreApplication::translate( "Advanced", tags[i].toStdString().c_str(), nullptr ) );
+			if(tags[i] == "Singleplayer" || tags[i] == "Cooperative")
+			___qtreewidgetitem1->setDisabled( true );
+		}
+	}
+
+	//	{
+	//		QTreeWidgetItem *___qtreewidgetitem1 = AO->treeWidget->topLevelItem( 0 );
+	//		___qtreewidgetitem1->setText( 0, QCoreApplication::translate( "Advanced", "Singleplayer", nullptr ) );
+	//		___qtreewidgetitem1->setDisabled( true );
+	//	}
+
 	m_bspHasPTIInstance = true;
+	pAdvancedOptionsButton->setDisabled( false );
 	pFileEntry->setText( filePath );
 }
 
@@ -472,15 +595,16 @@ void CP2MapPublisher::onOKPressed()
 		return;
 	}
 
-	if ( !m_edit && ( defaultFileLocIMG == "./" || !QFile::exists( defaultFileLocIMG )) )
+	if ( !m_edit && ( defaultFileLocIMG == "./" || !QFile::exists( defaultFileLocIMG ) ) )
 	{
 		QMessageBox::warning( this, "Preview Image Required!", "You don't have a Preview Image, please insert a Preview Image", QMessageBox::Ok );
 		return;
 	}
 
-	QFileInfo info(defaultFileLocIMG);
+	QFileInfo info( defaultFileLocIMG );
 	qInfo() << info.size();
-	if(info.size() > 1048576){
+	if ( info.size() > 1048576 )
+	{
 		QMessageBox::warning( this, "Image File Size Too Big", "This uploader is in Alpha and does not yet support dynamic image compression, therefor images can only be uploaded under 1MB.", QMessageBox::Ok );
 		return;
 	}
@@ -491,7 +615,8 @@ void CP2MapPublisher::onOKPressed()
 		return;
 	}
 
-	if(!m_edit || (m_edit && !defaultFileLocBSP.startsWith("mymaps/"))){
+	if ( !m_edit || ( m_edit && !defaultFileLocBSP.startsWith( "mymaps/" ) ) )
+	{
 		if ( !defaultFileLocBSP.endsWith( ".bsp" ) )
 		{
 			QMessageBox::warning( this, "No Map Found!", "You don't have a BSP selected! Please select a valid BSP", QMessageBox::Ok );
@@ -516,10 +641,10 @@ void CP2MapPublisher::onOKPressed()
 		// 	return;
 		// }
 		QDataStream stream { &file };
-		QByteArray bArray( (int) file.size(), 0 );
+		QByteArray bArray( (int)file.size(), 0 );
 		stream.readRawData( bArray.data(), bArray.size() );
-		BSPHeaderStruct_t castedLump{};
-		memcpy(&castedLump,bArray.data(),sizeof(BSPHeaderStruct_t));
+		BSPHeaderStruct_t castedLump {};
+		memcpy( &castedLump, bArray.data(), sizeof( BSPHeaderStruct_t ) );
 		qInfo() << castedLump.m_version;
 		if ( castedLump.m_version != 21 )
 		{
@@ -536,7 +661,6 @@ void CP2MapPublisher::onOKPressed()
 			dialog->exec();
 			return;
 		}
-
 	}
 
 	if ( m_edit )
@@ -555,10 +679,10 @@ void CP2MapPublisher::onClosePressed()
 	this->close();
 }
 
-void CP2MapPublisher::closeEvent( QCloseEvent* event )
+void CP2MapPublisher::closeEvent( QCloseEvent *event )
 {
-    emit mapPublisherClosed();
-    event->accept();
+	emit mapPublisherClosed();
+	event->accept();
 }
 
 std::vector<std::string> CP2MapPublisher::splitString( const std::string &input, char delimiter )

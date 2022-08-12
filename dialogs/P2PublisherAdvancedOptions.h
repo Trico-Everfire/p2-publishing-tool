@@ -252,11 +252,6 @@ public:
 		QTreeWidgetItem *___qtreewidgetitem = treeWidget->headerItem();
 		___qtreewidgetitem->setText( 0, QCoreApplication::translate( "Advanced", "Tags", nullptr ) );
 
-		treeWidget->setSortingEnabled( false );
-		QTreeWidgetItem *___qtreewidgetitem1 = treeWidget->topLevelItem( 0 );
-		___qtreewidgetitem1->setText( 0, QCoreApplication::translate( "Advanced", "Singleplayer", nullptr ) );
-		___qtreewidgetitem1->setDisabled( true );
-
 		//toolButton_2->setText( QCoreApplication::translate( "Advanced", "Up", nullptr ) );
 		//toolButton_3->setText( QCoreApplication::translate( "Advanced", "Down", nullptr ) );
 		toolButton_4->setText( QCoreApplication::translate( "Advanced", "Add", nullptr ) );
