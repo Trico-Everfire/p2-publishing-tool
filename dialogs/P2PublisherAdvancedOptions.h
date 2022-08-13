@@ -227,21 +227,32 @@ public:
 								  QMessageBox::warning( nullptr, "Invalid Image", "Could not load the image." );
 								  return;
 							  }
-							  QFileInfo file( filePath );
-							  if ( file.size() > 1048576 )
-							  {
-								  QMessageBox::warning( nullptr, "Image File Size Too Big", "This uploader is in Alpha and does not yet support dynamic image compression, therefor images can only be uploaded under 1MB.", QMessageBox::Ok );
-								  return;
-							  }
+
 							  tempMap = tempMap.scaled( 201, 121, Qt::IgnoreAspectRatio );
 							  label->setPixmap( tempMap );
 							  auto item = new QTreeWidgetItem( 0 );
 							  QFileInfo fileInfo( filePath );
-							  item->setText( 0, fileInfo.fileName() );
-							  item->setData( 0, Qt::UserRole, filePath );
-							  ImageTree->addTopLevelItem( item );
-							  ImageTree->clearSelection();
-							  item->setSelected( true );
+
+							  QPixmap thumbnail( filePath );
+							  if ( !QDir( "resources" ).exists() )
+								  QDir().mkdir( "resources" );
+
+							  QString filepath = QString( QDir::currentPath() + "/resources/AdditionImage_"+ fileInfo.fileName()+"_.jpg" );
+							  if ( thumbnail.save( filepath, "jpg" ) )
+							  {
+
+								  if ( QFileInfo(filepath).size() > 1048576 )
+								  {
+									  QMessageBox::warning( nullptr, "Image File Size Too Big", "Your image exceeds the max upload limit of 1MB, the uploader's compressor was unable to compress your image to 1MB and therefore this image can't be uploaded.", QMessageBox::Ok );
+									  return;
+								  }
+
+								  item->setText( 0, fileInfo.fileName() );
+								  item->setData( 0, Qt::UserRole, filepath );
+								  ImageTree->addTopLevelItem( item );
+								  ImageTree->clearSelection();
+								  item->setSelected( true );
+							  }
 						  } );
 		QObject::connect( toolButton_5, &QPushButton::pressed, Advanced, [&]()
 						  {

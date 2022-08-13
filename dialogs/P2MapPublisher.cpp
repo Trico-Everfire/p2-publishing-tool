@@ -265,7 +265,6 @@ void CP2MapPublisher::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool 
 {
 	qInfo() << bFailure;
 	qInfo() << pItem->m_eResult;
-
 	this->close();
 }
 
@@ -433,9 +432,18 @@ void CP2MapPublisher::OpenImageFileExplorer()
 		QDir().mkdir( "resources" );
 
 	QString filepath = QString( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" );
-	qInfo() << filepath;
-	if ( thumbnail.save( filepath, "jpg" ) )
+	if ( thumbnail.save( filepath, "jpg" ) ){
+		if ( QFileInfo(filepath).size() > 1048576 )
+		{
+			tempMap = QPixmap( ":/zoo_textures/InvalidImage.png" );
+			tempMap = tempMap.scaled( 239, 134., Qt::IgnoreAspectRatio );
+			pImageLabel->setPixmap( tempMap );
+			QMessageBox::warning( nullptr, "Image File Size Too Big", "Your image exceeds the max upload limit of 1MB, the uploader's compressor was unable to compress your image to 1MB and therefore this image can't be uploaded.", QMessageBox::Ok );
+			return;
+		}
 		defaultFileLocIMG = fPathOG;
+	}
+
 }
 
 void CP2MapPublisher::OpenBSPFileExplorer()
