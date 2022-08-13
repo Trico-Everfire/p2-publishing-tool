@@ -1,4 +1,4 @@
-# Welcome, future started, to Everfire's Portal 2 Map Uploader (ALPHA).
+# Welcome, future starter, to Everfire's Portal 2 Map Uploader.
 
 ![](https://media.discordapp.net/attachments/645794660522000394/936721993359843388/P2_Publisher_Icon2.png)
 
@@ -10,9 +10,7 @@
 - ### Workshop Visibility
 - ### Toggleable option for PTI requirement.
 
-## Currently the application is in alpha, therefor a lot of base features are missing:
-- ### Image compression for images.
-- ### Coop map support.
-- ### Automatic Test Element Tag assignment.
-
 ## This tool is open source, If you wish to compile the uploader for your own workshop, or any other workshop, the code is open source under MIT license.
+
+### LINUX
+Sadly, I haven't found a way to add the binaries for QT to the uploader, therefore QT 5.15.2 must be installed on your system to work. Sorry for the inconinience.
