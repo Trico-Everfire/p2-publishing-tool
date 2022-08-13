@@ -30,6 +30,7 @@ namespace ui
 		void runSetCallbacks();
 		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
 		QTreeWidget *m_treeWidget;
+
 	private:
 		QPushButton *pEditButton;
 		QPushButton *pDeleteButton;
@@ -52,4 +53,3 @@ namespace ui
 		void treeSelectionChanged();
 	};
 } // namespace ui
-

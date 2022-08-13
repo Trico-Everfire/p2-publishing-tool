@@ -9,16 +9,18 @@
 
 #include <QString>
 
-enum class ListInitResponse {
+enum class ListInitResponse
+{
 	FILENOTFOUND,
 	FILEINVALID,
 	FILEINITIALISED
 };
 
-class P2ElementParser {
+class P2ElementParser
+{
 private:
 	inline static bool initialised = false;
-	inline static KeyValueRoot* elementList;
+	inline static KeyValueRoot *elementList;
 	inline static const QString defaultElementList = "\"entities\" {\n"
 													 "    \"logic_relay\" {\n"
 													 "        \"disable_pti_audio\" \"1\"\n"
@@ -79,9 +81,10 @@ private:
 													 "        \"tag\" \"Light Bridge\"\n"
 													 "    }\n"
 													 "}";
+
 public:
 	static ListInitResponse initialiseElementList();
-	static KeyValueRoot* getElementList();
+	static KeyValueRoot *getElementList();
 	static bool isInitialised();
 };
 

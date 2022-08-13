@@ -221,9 +221,9 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		SteamUGC()->RemoveItemPreview( hUpdateHandle, ind );
 	}
 
-	if ( defaultFileLocIMG != "./" && QFile::exists( defaultFileLocIMG ) )
+	if ( defaultFileLocIMG != "./" && QFile::exists( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" ) )
 	{
-		qInfo() << SteamUGC()->SetItemPreview( hUpdateHandle, defaultFileLocIMG.toStdString().c_str() );
+		qInfo() << SteamUGC()->SetItemPreview( hUpdateHandle, QString( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" ).toStdString().c_str() );
 	}
 
 	QTreeWidgetItemIterator iterator4( AO->ImageTree );
@@ -265,7 +265,6 @@ void CP2MapPublisher::OnSubmitItemUpdate( SubmitItemUpdateResult_t *pItem, bool 
 {
 	qInfo() << bFailure;
 	qInfo() << pItem->m_eResult;
-
 	this->close();
 }
 
@@ -412,17 +411,39 @@ void CP2MapPublisher::onAgreementButtonPressed()
 void CP2MapPublisher::OpenImageFileExplorer()
 {
 	QString filePath = QFileDialog::getOpenFileName( this, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
+	QString fPathOG = filePath;
 	if ( filePath.isEmpty() )
 		return;
-	defaultFileLocIMG = filePath;
 	QPixmap tempMap = QPixmap( filePath );
 	if ( tempMap.isNull() )
 	{
-		defaultFileLocIMG = "InvalidImage.png";
+		filePath = ":/zoo_textures/InvalidImage.png";
 		tempMap = QPixmap( ":/zoo_textures/InvalidImage.png" );
 	}
 	tempMap = tempMap.scaled( 239, 134., Qt::IgnoreAspectRatio );
 	pImageLabel->setPixmap( tempMap );
+
+	if ( tempMap.isNull() )
+		return;
+	// QImage image(filePath);
+	QPixmap thumbnail( filePath );
+	thumbnail = thumbnail.scaled( 1914, 1078, Qt::IgnoreAspectRatio );
+	if ( !QDir( "resources" ).exists() )
+		QDir().mkdir( "resources" );
+
+	QString filepath = QString( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" );
+	if ( thumbnail.save( filepath, "jpg" ) ){
+		if ( QFileInfo(filepath).size() > 1048576 )
+		{
+			tempMap = QPixmap( ":/zoo_textures/InvalidImage.png" );
+			tempMap = tempMap.scaled( 239, 134., Qt::IgnoreAspectRatio );
+			pImageLabel->setPixmap( tempMap );
+			QMessageBox::warning( nullptr, "Image File Size Too Big", "Your image exceeds the max upload limit of 1MB, the uploader's compressor was unable to compress your image to 1MB and therefore this image can't be uploaded.", QMessageBox::Ok );
+			return;
+		}
+		defaultFileLocIMG = fPathOG;
+	}
+
 }
 
 void CP2MapPublisher::OpenBSPFileExplorer()
@@ -469,7 +490,6 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 
 	if ( P2ElementParser::isInitialised() )
 	{
-
 		KeyValueRoot *keyvals = P2ElementParser::getElementList();
 		qInfo() << keyvals->Get( "entities" ).childCount;
 		//		keyvals.Solidify();
@@ -515,38 +535,38 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 			entity->Parse( entityQStr.toStdString().c_str() );
 			bool tagSuffices = false;
 
-			if(!isCoop)
-				isCoop = QString( entity->Get( "entity" ).Get( "classname" ).value.string ).compare("info_coop_spawn") == 0 ;
+			if ( !isCoop )
+				isCoop = QString( entity->Get( "entity" ).Get( "classname" ).value.string ).compare( "info_coop_spawn" ) == 0;
 
-			if(!isSingeplayer)
-				isSingeplayer = QString( entity->Get( "entity" ).Get( "classname" ).value.string ).compare("info_player_start") == 0;
+			if ( !isSingeplayer )
+				isSingeplayer = QString( entity->Get( "entity" ).Get( "classname" ).value.string ).compare( "info_player_start" ) == 0;
 
-			if(isSingeplayer && !tags.contains("Singleplayer")){
+			if ( isSingeplayer && !tags.contains( "Singleplayer" ) )
+			{
 				tags << "Singleplayer";
 			}
-			if(isCoop && !tags.contains("Cooperative")){
+			if ( isCoop && !tags.contains( "Cooperative" ) )
+			{
 				tags << "Cooperative";
 			}
-//			qInfo() << keyvals->Get( "entities" )["prop_tractor_beam"].key.string;
-//			for(int i = 0; i < keyvals->Get( "entities" ).childCount; i++){
-//				auto entityClassName = entity->Get( "entity" ).Get( "classname" ).value.string;
-//				if(QString(keyvals->Get( "entities" )[i].key.string).compare(entityClassName)){
-//					qInfo() << keyvals->Get( "entities" )[i].key.string;
-//				}
-//			}
-
+			//			qInfo() << keyvals->Get( "entities" )["prop_tractor_beam"].key.string;
+			//			for(int i = 0; i < keyvals->Get( "entities" ).childCount; i++){
+			//				auto entityClassName = entity->Get( "entity" ).Get( "classname" ).value.string;
+			//				if(QString(keyvals->Get( "entities" )[i].key.string).compare(entityClassName)){
+			//					qInfo() << keyvals->Get( "entities" )[i].key.string;
+			//				}
+			//			}
 
 			for ( int i = 0; i < keyvals->Get( "entities" ).childCount; i++ )
 			{
-//				QRegExp r(keyvals->Get( "entities" )[i].key.string);
-//				qInfo() << keyvals->Get( "entities" )[i].key.string;
-//				qInfo() << r.exactMatch(QString( entity->Get( "entity" ).Get( "classname" ).value.string ));
-//				qInfo() << entity->Get( "entity" ).Get( "classname" ).value.string;
+				//				QRegExp r(keyvals->Get( "entities" )[i].key.string);
+				//				qInfo() << keyvals->Get( "entities" )[i].key.string;
+				//				qInfo() << r.exactMatch(QString( entity->Get( "entity" ).Get( "classname" ).value.string ));
+				//				qInfo() << entity->Get( "entity" ).Get( "classname" ).value.string;
 				char *str = entity->Get( "entity" ).Get( "classname" ).value.string;
-				if (QString(keyvals->Get( "entities" )[i].key.string).compare(str) == 0)
+				if ( QString( keyvals->Get( "entities" )[i].key.string ).compare( str ) == 0 )
 				{
-
-					//qInfo() << (QString(entity->Get( "entity" ).Get( "classname" ).value.string ));
+					// qInfo() << (QString(entity->Get( "entity" ).Get( "classname" ).value.string ));
 
 					if ( keyvals->Get( "entities" )[i].childCount != 1 )
 						for ( int j = 0; j < keyvals->Get( "entities" )[i].childCount; j++ )
@@ -561,24 +581,26 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 							qInfo() << a;
 							qInfo() << b;
 							tagSuffices = a.compare( b, Qt::CaseInsensitive ) == 0;
-							if(!tagSuffices) break;
-					}
+							if ( !tagSuffices )
+								break;
+						}
 					else
 						tagSuffices = true;
 					// qInfo() << keyvals->Get("entities")[i]["tag"].value.string;
-					if ( tagSuffices && !tags.contains(keyvals->Get( "entities" )[i]["tag"].value.string) )
+					if ( tagSuffices && !tags.contains( keyvals->Get( "entities" )[i]["tag"].value.string ) )
 						tags << keyvals->Get( "entities" )[i]["tag"].value.string;
 				}
 			}
 		}
 
-
-		if(isCoop && isSingeplayer){
+		if ( isCoop && isSingeplayer )
+		{
 			QMessageBox::critical( this, "Map Error: Conflicting Player Spawn", "Invalid BSP.\nThe parser failed to read the entity lump data properly, please recompile the BSP and try again." );
 			return;
 		}
 
-		if(!isCoop && !isSingeplayer){
+		if ( !isCoop && !isSingeplayer )
+		{
 			QMessageBox::critical( this, "Map Error: No Player Spawn", "Info" );
 			return;
 		}
@@ -586,12 +608,13 @@ void CP2MapPublisher::OpenBSPFileExplorer()
 		AO->treeWidget->clear();
 
 		qInfo() << tags;
-		std::reverse(tags.begin(), tags.end());
-		for(int i = 0; i < tags.count(); i++){
-			QTreeWidgetItem *___qtreewidgetitem1 = new QTreeWidgetItem(AO->treeWidget);
+		std::reverse( tags.begin(), tags.end() );
+		for ( int i = 0; i < tags.count(); i++ )
+		{
+			QTreeWidgetItem *___qtreewidgetitem1 = new QTreeWidgetItem( AO->treeWidget );
 			___qtreewidgetitem1->setText( 0, QCoreApplication::translate( "Advanced", tags[i].toStdString().c_str(), nullptr ) );
-			if(tags[i] == "Singleplayer" || tags[i] == "Cooperative")
-			___qtreewidgetitem1->setDisabled( true );
+			if ( tags[i] == "Singleplayer" || tags[i] == "Cooperative" )
+				___qtreewidgetitem1->setDisabled( true );
 		}
 	}
 
@@ -617,14 +640,6 @@ void CP2MapPublisher::onOKPressed()
 	if ( !m_edit && ( defaultFileLocIMG == "./" || !QFile::exists( defaultFileLocIMG ) ) )
 	{
 		QMessageBox::warning( this, "Preview Image Required!", "You don't have a Preview Image, please insert a Preview Image", QMessageBox::Ok );
-		return;
-	}
-
-	QFileInfo info( defaultFileLocIMG );
-	qInfo() << info.size();
-	if ( info.size() > 1048576 )
-	{
-		QMessageBox::warning( this, "Image File Size Too Big", "This uploader is in Alpha and does not yet support dynamic image compression, therefor images can only be uploaded under 1MB.", QMessageBox::Ok );
 		return;
 	}
 

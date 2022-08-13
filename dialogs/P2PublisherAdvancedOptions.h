@@ -10,9 +10,21 @@
 #ifndef P2PUBLISHERADVANCEDOPTIONS_H
 #define P2PUBLISHERADVANCEDOPTIONS_H
 
+#include "P2DialogConfig.h"
+
+#include <QAction>
 #include <QComboBox>
+#include <QDebug>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QMessageBox>
+#include <QPixmap>
+#include <QRegExp>
+#include <QUrl>
 #include <QtCore/QVariant>
 #include <QtGui/QIcon>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QDialog>
@@ -20,22 +32,10 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
-#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QTreeWidget>
-#include <QAction>
-#include <QMessageBox>
 #include <regex>
-#include <QRegExp>
-#include <QFileDialog>
-#include <QPixmap>
-#include <QDebug>
-#include <QFileInfo>
-#include <QtNetwork/QNetworkAccessManager>
-#include <QUrl>
-#include <QtNetwork/QNetworkReply>
-
-#include "P2DialogConfig.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -53,7 +53,7 @@ public:
 	QPushButton *toolButton_5;
 	QPushButton *toolButton_6;
 	QPushButton *toolButton_7;
-    QPushButton *toolButton_8;
+	QPushButton *toolButton_8;
 	QLabel *label;
 	QLabel *label_3;
 	QLabel *label_4;
@@ -63,13 +63,13 @@ public:
 	QTreeWidget *treeWidget_2;
 	QComboBox *comboBox;
 	QLabel *label_2;
-    QTreeWidget *ImageTree;
+	QTreeWidget *ImageTree;
 	QString defaultFileLocIMG = "./";
 
 	void setupUi( QDialog *Advanced )
 	{
 		if ( Advanced->objectName().isEmpty() )
-		Advanced->setObjectName( QString::fromUtf8( "Advanced" ) );
+			Advanced->setObjectName( QString::fromUtf8( "Advanced" ) );
 		Advanced->resize( 700, 442 );
 		Advanced->setWindowFilePath( QString::fromUtf8( "" ) );
 		buttonBox = new QDialogButtonBox( Advanced );
@@ -98,12 +98,12 @@ public:
 		toolButton_4->setGeometry( QRect( 20, 150, 151, 21 ) );
 		toolButton_5 = new QPushButton( Advanced );
 		toolButton_5->setObjectName( QString::fromUtf8( "toolButton_5" ) );
-		toolButton_5->setDisabled(true);
+		toolButton_5->setDisabled( true );
 		toolButton_5->setGeometry( QRect( 180, 150, 181, 21 ) );
 		toolButton_7 = new QPushButton( Advanced );
 		toolButton_7->setObjectName( QString::fromUtf8( "toolButton_5" ) );
 		toolButton_7->setGeometry( QRect( 20, 360, 231, 31 ) );
-        toolButton_8 = new QPushButton( Advanced );
+		toolButton_8 = new QPushButton( Advanced );
 		toolButton_8->setObjectName( QString::fromUtf8( "toolButton_5" ) );
 		toolButton_8->setGeometry( QRect( 440, 180, 231, 31 ) );
 		label = new QLabel( Advanced );
@@ -135,7 +135,7 @@ public:
 		comboBox->addItem( QString() );
 		comboBox->addItem( QString() );
 		comboBox->addItem( QString() );
-		comboBox->addItem( QString() ); 
+		comboBox->addItem( QString() );
 		comboBox->setObjectName( QString::fromUtf8( "comboBox" ) );
 		comboBox->setGeometry( QRect( 350, 380, 90, 30 ) );
 		label_2 = new QLabel( Advanced );
@@ -144,101 +144,138 @@ public:
 
 		retranslateUi( Advanced );
 		QObject::connect( buttonBox, SIGNAL( accepted() ), Advanced, SLOT( accept() ) );
-		QObject::connect( toolButton, &QPushButton::pressed, Advanced, [&](){
-            if(lineEdit->text().isEmpty()) return;
-            if(lineEdit_2->text().length() > 255){
-                QMessageBox::warning( nullptr, "TOO MANY CHARACTERS!", "This tag contains too many characters! (max is 255)" );
-                return;
-            }
-            for(QString string : lineEdit_2->text()){
-                QString valid_characters = "!\"#$%&'()*+-./:;<=>?@[\\]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ";
-                if(!valid_characters.contains(string)){
-                    QMessageBox::warning( nullptr, "INVALID CHARACTERS", "This tag contains a invalid character.\nhttps://en.cppreference.com/w/c/string/byte/isprint\n for more information." );
-                    return;
-                }
-            }
-            auto item = new QTreeWidgetItem( 0 );
-            item->setText( 0, lineEdit->text() );
-            treeWidget->addTopLevelItem(item);
-            lineEdit->setText(QString());
-        });
-        QObject::connect( treeWidget, &QTreeWidget::itemSelectionChanged, Advanced, [&](){
-            if ( treeWidget->selectedItems().length() == 1 ){
-                toolButton_7->setEnabled(true);
-            } else {
-                toolButton_7->setEnabled(false);
-            }
-        });
-        QObject::connect( toolButton_7, &QPushButton::pressed, Advanced, [&](){
-            delete treeWidget->selectedItems()[0];
-        });
+		QObject::connect( toolButton, &QPushButton::pressed, Advanced, [&]()
+						  {
+							  if ( lineEdit->text().isEmpty() )
+								  return;
+							  if ( lineEdit_2->text().length() > 255 )
+							  {
+								  QMessageBox::warning( nullptr, "TOO MANY CHARACTERS!", "This tag contains too many characters! (max is 255)" );
+								  return;
+							  }
+							  for ( QString string : lineEdit_2->text() )
+							  {
+								  QString valid_characters = "!\"#$%&'()*+-./:;<=>?@[\\]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ";
+								  if ( !valid_characters.contains( string ) )
+								  {
+									  QMessageBox::warning( nullptr, "INVALID CHARACTERS", "This tag contains a invalid character.\nhttps://en.cppreference.com/w/c/string/byte/isprint\n for more information." );
+									  return;
+								  }
+							  }
+							  auto item = new QTreeWidgetItem( 0 );
+							  item->setText( 0, lineEdit->text() );
+							  treeWidget->addTopLevelItem( item );
+							  lineEdit->setText( QString() );
+						  } );
+		QObject::connect( treeWidget, &QTreeWidget::itemSelectionChanged, Advanced, [&]()
+						  {
+							  if ( treeWidget->selectedItems().length() == 1 )
+							  {
+								  toolButton_7->setEnabled( true );
+							  }
+							  else
+							  {
+								  toolButton_7->setEnabled( false );
+							  }
+						  } );
+		QObject::connect( toolButton_7, &QPushButton::pressed, Advanced, [&]()
+						  {
+							  delete treeWidget->selectedItems()[0];
+						  } );
 
-        QObject::connect( toolButton_6, &QPushButton::pressed, Advanced, [&](){
-            if(lineEdit_2->text().isEmpty()) return;
-            if(lineEdit_2->text().contains("http://") || lineEdit_2->text().contains("https://") || lineEdit_2->text().contains("www.you")){
-                QMessageBox::warning( nullptr, "Invalid Handle", "You need to enter in a youtube handle, not a link.\nhandles look like this: (dQw4w9WgXcQ) and can be found at the end of a youtube link: (https://www.youtube.com/watch?v=)\nOnly the handle is allowed!" );
-                return;
-            }
-            auto item = new QTreeWidgetItem( 0 );
-            item->setText( 0, lineEdit_2->text() );
-            treeWidget_2->addTopLevelItem(item);
-            lineEdit_2->setText(QString());
-        });
-        QObject::connect( treeWidget_2, &QTreeWidget::itemSelectionChanged, Advanced, [&](){
-            if ( treeWidget_2->selectedItems().length() == 1 ){
-                toolButton_8->setEnabled(true);
-            } else {
-                toolButton_8->setEnabled(false);
-            }
-        });
-        QObject::connect( toolButton_8, &QPushButton::pressed, Advanced, [&](){
-            //int index = treeWidget->indexOfTopLevelItem(treeWidget->selectedItems()[0]);
-            delete treeWidget_2->selectedItems()[0];
-            //treeWidget->removeItemWidget(treeWidget->selectedItems()[0],0);
-        });
+		QObject::connect( toolButton_6, &QPushButton::pressed, Advanced, [&]()
+						  {
+							  if ( lineEdit_2->text().isEmpty() )
+								  return;
+							  if ( lineEdit_2->text().contains( "http://" ) || lineEdit_2->text().contains( "https://" ) || lineEdit_2->text().contains( "www.you" ) )
+							  {
+								  QMessageBox::warning( nullptr, "Invalid Handle", "You need to enter in a youtube handle, not a link.\nhandles look like this: (dQw4w9WgXcQ) and can be found at the end of a youtube link: (https://www.youtube.com/watch?v=)\nOnly the handle is allowed!" );
+								  return;
+							  }
+							  auto item = new QTreeWidgetItem( 0 );
+							  item->setText( 0, lineEdit_2->text() );
+							  treeWidget_2->addTopLevelItem( item );
+							  lineEdit_2->setText( QString() );
+						  } );
+		QObject::connect( treeWidget_2, &QTreeWidget::itemSelectionChanged, Advanced, [&]()
+						  {
+							  if ( treeWidget_2->selectedItems().length() == 1 )
+							  {
+								  toolButton_8->setEnabled( true );
+							  }
+							  else
+							  {
+								  toolButton_8->setEnabled( false );
+							  }
+						  } );
+		QObject::connect( toolButton_8, &QPushButton::pressed, Advanced, [&]()
+						  {
+							  // int index = treeWidget->indexOfTopLevelItem(treeWidget->selectedItems()[0]);
+							  delete treeWidget_2->selectedItems()[0];
+							  // treeWidget->removeItemWidget(treeWidget->selectedItems()[0],0);
+						  } );
 
-        QObject::connect( toolButton_4, &QPushButton::pressed, Advanced, [&](){
-			QString filePath = QFileDialog::getOpenFileName( nullptr, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
-			if(filePath.isEmpty()) return;
-			defaultFileLocIMG = filePath;
-			QPixmap tempMap = QPixmap( filePath );
-			if(tempMap.isNull()){
-				QMessageBox::warning( nullptr, "Invalid Image", "Could not load the image." );
-				return;
-			}
-			QFileInfo file(filePath);
-			if(file.size() > 1048576){
-				QMessageBox::warning( nullptr, "Image File Size Too Big", "This uploader is in Alpha and does not yet support dynamic image compression, therefor images can only be uploaded under 1MB.", QMessageBox::Ok );
-				return;
-			}
-			tempMap = tempMap.scaled( 201, 121, Qt::IgnoreAspectRatio );
-			label->setPixmap(tempMap);
-			auto item = new QTreeWidgetItem( 0 );
-			QFileInfo fileInfo(filePath);
-            item->setText( 0, fileInfo.fileName() );
-			item->setData(0,Qt::UserRole,filePath);
-			ImageTree->addTopLevelItem(item);
-			ImageTree->clearSelection();
-			item->setSelected(true);
-		});
-		QObject::connect( toolButton_5, &QPushButton::pressed, Advanced, [&](){
-			delete ImageTree->selectedItems()[0];
-		});
-		QObject::connect( ImageTree, &QTreeWidget::itemSelectionChanged, Advanced, [&](){
-			
-			if ( ImageTree->selectedItems().length() == 1 ){
-				QString filePath = ImageTree->selectedItems()[0]->data(0,Qt::UserRole).toString();
-				QPixmap tempMap;
-				tempMap = QPixmap( filePath );
-				toolButton_5->setEnabled(true);
-				label->setPixmap(tempMap);
-            } else {
-				label->setPixmap(QPixmap( "" ));
-                toolButton_5->setEnabled(false);
-            }
-        });
+		QObject::connect( toolButton_4, &QPushButton::pressed, Advanced, [&]()
+						  {
+							  QString filePath = QFileDialog::getOpenFileName( nullptr, "Open", defaultFileLocIMG, "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
+							  if ( filePath.isEmpty() )
+								  return;
+							  defaultFileLocIMG = filePath;
+							  QPixmap tempMap = QPixmap( filePath );
+							  if ( tempMap.isNull() )
+							  {
+								  QMessageBox::warning( nullptr, "Invalid Image", "Could not load the image." );
+								  return;
+							  }
 
-        QMetaObject::connectSlotsByName( Advanced );
+							  tempMap = tempMap.scaled( 201, 121, Qt::IgnoreAspectRatio );
+							  label->setPixmap( tempMap );
+							  auto item = new QTreeWidgetItem( 0 );
+							  QFileInfo fileInfo( filePath );
+
+							  QPixmap thumbnail( filePath );
+							  if ( !QDir( "resources" ).exists() )
+								  QDir().mkdir( "resources" );
+
+							  QString filepath = QString( QDir::currentPath() + "/resources/AdditionImage_"+ fileInfo.fileName()+"_.jpg" );
+							  if ( thumbnail.save( filepath, "jpg" ) )
+							  {
+
+								  if ( QFileInfo(filepath).size() > 1048576 )
+								  {
+									  QMessageBox::warning( nullptr, "Image File Size Too Big", "Your image exceeds the max upload limit of 1MB, the uploader's compressor was unable to compress your image to 1MB and therefore this image can't be uploaded.", QMessageBox::Ok );
+									  return;
+								  }
+
+								  item->setText( 0, fileInfo.fileName() );
+								  item->setData( 0, Qt::UserRole, filepath );
+								  ImageTree->addTopLevelItem( item );
+								  ImageTree->clearSelection();
+								  item->setSelected( true );
+							  }
+						  } );
+		QObject::connect( toolButton_5, &QPushButton::pressed, Advanced, [&]()
+						  {
+							  delete ImageTree->selectedItems()[0];
+						  } );
+		QObject::connect( ImageTree, &QTreeWidget::itemSelectionChanged, Advanced, [&]()
+						  {
+							  if ( ImageTree->selectedItems().length() == 1 )
+							  {
+								  QString filePath = ImageTree->selectedItems()[0]->data( 0, Qt::UserRole ).toString();
+								  QPixmap tempMap;
+								  tempMap = QPixmap( filePath );
+								  toolButton_5->setEnabled( true );
+								  label->setPixmap( tempMap );
+							  }
+							  else
+							  {
+								  label->setPixmap( QPixmap( "" ) );
+								  toolButton_5->setEnabled( false );
+							  }
+						  } );
+
+		QMetaObject::connectSlotsByName( Advanced );
 	} // setupUi
 
 	void retranslateUi( QDialog *Advanced )
@@ -252,13 +289,13 @@ public:
 		QTreeWidgetItem *___qtreewidgetitem = treeWidget->headerItem();
 		___qtreewidgetitem->setText( 0, QCoreApplication::translate( "Advanced", "Tags", nullptr ) );
 
-		//toolButton_2->setText( QCoreApplication::translate( "Advanced", "Up", nullptr ) );
-		//toolButton_3->setText( QCoreApplication::translate( "Advanced", "Down", nullptr ) );
+		// toolButton_2->setText( QCoreApplication::translate( "Advanced", "Up", nullptr ) );
+		// toolButton_3->setText( QCoreApplication::translate( "Advanced", "Down", nullptr ) );
 		toolButton_4->setText( QCoreApplication::translate( "Advanced", "Add", nullptr ) );
 		toolButton_5->setText( QCoreApplication::translate( "Advanced", "Remove", nullptr ) );
 		toolButton_7->setText( QCoreApplication::translate( "Advanced", "Remove Tag", nullptr ) );
 		toolButton_7->setDisabled( true );
-        toolButton_8->setText( QCoreApplication::translate( "Advanced", "Remove Video", nullptr ) );
+		toolButton_8->setText( QCoreApplication::translate( "Advanced", "Remove Video", nullptr ) );
 		toolButton_8->setDisabled( true );
 		label->setText( QString() );
 		label_3->setText( QCoreApplication::translate( "Advanced", "Images", nullptr ) );
@@ -271,7 +308,7 @@ public:
 		comboBox->setItemText( 1, QCoreApplication::translate( "Advanced", "private", nullptr ) );
 		comboBox->setItemText( 2, QCoreApplication::translate( "Advanced", "friends", nullptr ) );
 		comboBox->setItemText( 3, QCoreApplication::translate( "Advanced", "unlisted", nullptr ) );
-				QTreeWidgetItem *___qtreewidgetitemImage = ImageTree->headerItem();
+		QTreeWidgetItem *___qtreewidgetitemImage = ImageTree->headerItem();
 		___qtreewidgetitemImage->setText( 0, QCoreApplication::translate( "Advanced", "Images", nullptr ) );
 		label_2->setText( QCoreApplication::translate( "Advanced", "Visibility:", nullptr ) );
 		Advanced->setFixedSize( 700, 442 );
@@ -283,9 +320,10 @@ namespace ui
 	class CP2PublisherAdvancedOptions : public Ui_Advanced
 	{
 	public:
-		void disableTagWidget(bool disable){
-			toolButton->setDisabled(disable);
-			lineEdit->setDisabled(disable);
+		void disableTagWidget( bool disable )
+		{
+			toolButton->setDisabled( disable );
+			lineEdit->setDisabled( disable );
 		}
 	};
 } // namespace ui

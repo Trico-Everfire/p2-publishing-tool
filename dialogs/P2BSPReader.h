@@ -2,7 +2,7 @@
 
 static constexpr const int LUMP_AMOUNT = 64;
 
-#pragma pack(push, 1)
+#pragma pack( push, 1 )
 struct lumpData_t
 {
 	int fileOffset;
@@ -17,4 +17,4 @@ struct BSPHeaderStruct_t
 	int m_version;
 	lumpData_t lumps[LUMP_AMOUNT];
 };
-#pragma pack(pop)
+#pragma pack( pop )

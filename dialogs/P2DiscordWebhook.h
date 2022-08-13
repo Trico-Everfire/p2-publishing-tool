@@ -1,14 +1,15 @@
 #pragma once
+#include "libs/JSON/json.hpp"
+
+#include <QDebug>
 #include <QDialog>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QDebug>
-#include <QUrlQuery>
 #include <QNetworkRequest>
-#include <QJsonObject>
-#include <QJsonDocument>
+#include <QUrlQuery>
 #include <steam_api.h>
-#include "libs/JSON/json.hpp"
 
 using json = nlohmann::json;
 
@@ -22,12 +23,13 @@ namespace ui
 		json m_URLResult;
 		bool m_isReady = false;
 		bool isValid = true;
-		char* errorMessage;
+		char *errorMessage;
+
 	public:
-		explicit CP2DiscordWebhook(const std::string& link);
+		explicit CP2DiscordWebhook( const std::string &link );
 		~CP2DiscordWebhook() override;
-		void RunWebhook(SubmitItemUpdateResult_t *item);
+		void RunWebhook( SubmitItemUpdateResult_t *item );
 		[[nodiscard]] bool Validate() const;
-		char* ErrorMessage();
+		char *ErrorMessage();
 	};
-}
+} // namespace ui
