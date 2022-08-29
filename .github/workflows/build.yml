@@ -39,6 +39,7 @@ jobs:
           name: p2-publishing-tool-linux-${{matrix.build_type}}
           path: |
             ${{github.workspace}}/build/p2_map_publisher
+            ${{github.workspace}}/build/platforms/**
             ${{github.workspace}}/build/Credits.txt
             ${{github.workspace}}/build/*.s*
 
