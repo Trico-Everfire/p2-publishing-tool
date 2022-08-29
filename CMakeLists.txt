@@ -20,6 +20,12 @@ endif()
 
 if(UNIX)
 	set(QT_INCLUDE "/usr/include/x86_64-linux-gnu/qt5")
+	set(QT_BASEDIR "$ENV{HOME}/Qt/5.15.2/gcc_64/")
+	if(DEFINED QT_BASEDIR)
+	set(CMAKE_PREFIX_PATH "${QT_BASEDIR}/lib/cmake")
+	else()
+		message(FATAL_ERROR "--!@ Please define your QT install dir with -DQT_BASEDIR=C:/your/qt5/here")
+	endif()
 elseif(WIN32)
 	# On Windows, the install dir must be specified, as it's not standardized
 	if(DEFINED QT_BASEDIR)
@@ -59,15 +65,20 @@ set(P2_MAP_PUBLISHER_SRC
 		)
 list(APPEND P2_MAP_PUBLISHER_SRC ${P2_MAP_PUBLISHER_HEADERS})
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Network )
 
 set(APP_ICON_RESOURCE_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR}/res/appicon.rc)
 
 if(UNIX)
-	#   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Core.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Core.so.5" COPYONLY)
-	#	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Gui.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Gui.so.5" COPYONLY)
-	#	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Widgets.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Widgets.so.5" COPYONLY)
-	#	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Qt/libQt5Network.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Network.so.5" COPYONLY)
+	configure_file("${QT_BASEDIR}/lib/libQt5Core.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Core.so.5" COPYONLY)
+	configure_file("${QT_BASEDIR}/lib/libQt5Gui.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Gui.so.5" COPYONLY)
+	configure_file("${QT_BASEDIR}/lib/libQt5Widgets.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Widgets.so.5" COPYONLY)
+	configure_file("${QT_BASEDIR}/lib/libQt5Network.so.5.15.2" "${CMAKE_BINARY_DIR}/libQt5Network.so.5" COPYONLY)
+	configure_file("${QT_BASEDIR}/lib/libicui18n.so.56" "${CMAKE_BINARY_DIR}/libicui18n.so.56" COPYONLY)
+	configure_file("${QT_BASEDIR}/lib/libicuuc.so.56" "${CMAKE_BINARY_DIR}/libicuuc.so.56" COPYONLY)
+	configure_file("${QT_BASEDIR}/lib/libicudata.so.56" "${CMAKE_BINARY_DIR}/libicudata.so.56" COPYONLY)
+	configure_file("${QT_BASEDIR}/plugins/platforms/libqminimal.so" "${CMAKE_BINARY_DIR}/platforms/libqminimal.so" COPYONLY)
+	configure_file("${QT_BASEDIR}/plugins/platforms/libqxcb.so" "${CMAKE_BINARY_DIR}/platforms/libqxcb.so" COPYONLY)
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin/linux64/libsteam_api.so" "${CMAKE_BINARY_DIR}/libsteam_api.so" COPYONLY)
 	set(STEAM_API  "${CMAKE_BINARY_DIR}/libsteam_api.so")
 elseif(WIN32)
@@ -81,12 +92,13 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Credits.txt" "${CMAKE_BINARY_DIR}/Cr
 add_subdirectory( libs/SpeedyKeyV )
 
 
-add_executable(${PROJECT_NAME} ${P2_MAP_PUBLISHER_SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS} ${link_target})
+add_executable(${PROJECT_NAME} ${P2_MAP_PUBLISHER_SRC} res/zoo_textures.qrc ${APP_ICON_RESOURCE_WINDOWS} ${link_target})
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${P2_MAP_PUBLISHER_HEADERS})
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network ${STEAM_API} keyvalues)
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}/platforms")
 target_include_directories(${PROJECT_NAME} PRIVATE "${QT_INCLUDE} ${QT_INCLUDE}/QtWidgets" "${QT_INCLUDE}/QtGui" "${QT_INCLUDE}/QtCore" "${QT_INCLUDE}/QtNetwork")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/public/steam")
 
