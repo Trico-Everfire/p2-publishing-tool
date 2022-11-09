@@ -11,6 +11,3 @@
 - ### Toggleable option for PTI requirement.
 
 ## This tool is open source, If you wish to compile the uploader for your own workshop, or any other workshop, the code is open source under MIT license.
-
-### LINUX
-Sadly, I haven't found a way to add the binaries for QT to the uploader, therefore QT 5.15.2 must be installed on your system to work. Sorry for the inconinience.
