@@ -11,4 +11,7 @@
 - Workshop Visibility
 - Toggleable option for PTI requirement.
 
+### LINUX
+Sadly, I haven't found a way to add the binaries for QT to the uploader, therefore QT 5.15.2 must be installed on your system to work. Sorry for the inconinience.
+
 ## This tool is open source, If you wish to compile and distribute this tool for other purposes, the code is open source under MIT license.
