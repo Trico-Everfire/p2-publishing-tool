@@ -2,7 +2,7 @@
 
 ![](https://media.discordapp.net/attachments/645794660522000394/936721993359843388/P2_Publisher_Icon2.png)
 
-## An updated tool for uploading your Portal 2 maps to the workshop on both Windows and Linux, with a new QT UI
+## An updated tool for uploading your Portal 2 maps to the workshop on both Windows and Linux, made with the QT UI framework
 
 ### This tool improved upon the base Portal 2 Uploader with addition al features such as:
 - Custom tags.
