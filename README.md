@@ -2,12 +2,16 @@
 
 ![](https://media.discordapp.net/attachments/645794660522000394/936721993359843388/P2_Publisher_Icon2.png)
 
-## With this cross compatible uploading tool you'll be able to upload to the portal 2 workshop on both Windows and Linux, Removing VGUI entirely and opting for QT UI instead, This isnt  just a 1:1 copy. It adds a few needed features
+## An updated tool for uploading your Portal 2 maps to the workshop on both Windows and Linux, made with the QT UI framework
 
-- ### Custom tags.
-- ### Multiple preview images
-- ### Multiple preview Videos
-- ### Workshop Visibility
-- ### Toggleable option for PTI requirement.
+### This tool improved upon the base Portal 2 Uploader with addition al features such as:
+- Custom tags.
+- Multiple preview images
+- Multiple preview Videos
+- Workshop Visibility
+- Toggleable option for PTI requirement.
 
-## This tool is open source, If you wish to compile the uploader for your own workshop, or any other workshop, the code is open source under MIT license.
+### LINUX
+Sadly, I haven't found a way to add the binaries for QT to the uploader, therefore QT 5.15.2 must be installed on your system to work. Sorry for the inconinience.
+
+## This tool is open source, If you wish to compile and distribute this tool for other purposes, the code is open source under MIT license.
