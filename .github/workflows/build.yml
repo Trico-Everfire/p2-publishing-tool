@@ -56,6 +56,7 @@ jobs:
           path: |
             ${{github.workspace}}/build/p2_map_publisher
             ${{github.workspace}}/build/Credits.txt
+            ${{github.workspace}}/build/resources/
             ${{github.workspace}}/build/*.s*
 
   build-msvc:
@@ -99,5 +100,6 @@ jobs:
           path: |
             ${{github.workspace}}\build\p2_map_publisher.exe
             ${{github.workspace}}\build\*.dll
+            ${{github.workspace}}\build\resources\
             ${{github.workspace}}\build\platforms\*.dll
             ${{github.workspace}}\build\Credits.txt

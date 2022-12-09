@@ -368,10 +368,10 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 			buffer.open( QIODevice::ReadWrite );
 			image.scaled( 1914, 1078, Qt::KeepAspectRatio );
 			image.save( &buffer, "JPG" );
-			if ( !QDir( "resources" ).exists() )
-			{
-				std::filesystem::create_directory(std::filesystem::path((QDir::currentPath() + "/resources").toStdString().c_str()));
-			}
+//			if ( !QDir( "resources" ).exists() )
+//			{
+//				std::filesystem::create_directory(std::filesystem::path((QDir::currentPath() + "/resources").toStdString().c_str()));
+//			}
 			QString filepath = QString( QDir::currentPath() + "/resources/AdditionImage" + QString( std::to_string( i ).c_str() ) + ".jpg" );
 			QFile file( filepath );
 			file.open( QIODevice::ReadWrite );
@@ -433,13 +433,13 @@ void CP2MapPublisher::OpenImageFileExplorer()
 	// QImage image(filePath);
 	QPixmap thumbnail( filePath );
 	thumbnail = thumbnail.scaled( 1914, 1078, Qt::IgnoreAspectRatio );
-	if ( !QDir( "resources" ).exists() )
-	{
+//	if ( !QDir( "resources" ).exists() )
+//	{
 
-		std::filesystem::create_directory(std::filesystem::path((QDir::currentPath() + "/resources").toStdString().c_str()));
+		//std::filesystem::create_directory(std::filesystem::path((QDir::currentPath() + "/resources").toStdString().c_str()));
 //		QDir("./").mkdir( "resources" );
 //		QDir( "resources" );
-	}
+//	}
 
 	QString filepath = QString( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" );
 	if ( thumbnail.save( filepath, "jpg" ) ){

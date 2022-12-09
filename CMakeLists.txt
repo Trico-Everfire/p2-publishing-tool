@@ -80,6 +80,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Credits.txt" "${CMAKE_BINARY_DIR}/Cr
 
 add_subdirectory( libs/SpeedyKeyV )
 
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/resources)
 
 add_executable(${PROJECT_NAME} ${P2_MAP_PUBLISHER_SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS} ${link_target})
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${P2_MAP_PUBLISHER_HEADERS})
