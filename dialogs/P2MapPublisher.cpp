@@ -222,9 +222,9 @@ void CP2MapPublisher::UpdateItem( PublishedFileId_t itemID )
 		SteamUGC()->RemoveItemPreview( hUpdateHandle, ind );
 	}
 
-	if ( defaultFileLocIMG != "./" && QFile::exists( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" ) )
+	if ( defaultFileLocIMG != "./" && QFile::exists( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg" ) )
 	{
-		qInfo() << SteamUGC()->SetItemPreview( hUpdateHandle, QString( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" ).toStdString().c_str() );
+		qInfo() << SteamUGC()->SetItemPreview( hUpdateHandle, QString( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg" ).toStdString().c_str() );
 	}
 
 	QTreeWidgetItemIterator iterator4( AO->ImageTree );
@@ -315,7 +315,7 @@ void CP2MapPublisher::LoadExistingDetails( SteamUGCDetails_t details, uint32 ind
 
 	AO->disableTagWidget( false );
 
-	std::string dir = QDir::currentPath().toStdString() + "/resources/" + std::to_string( details.m_nPublishedFileId ) + "_Image0.png";
+	std::string dir = QDir::tempPath().toStdString() + "/" + std::to_string( details.m_nPublishedFileId ) + "_Image0.png";
 	SteamAPICall_t res = SteamRemoteStorage()->UGCDownloadToLocation( details.m_hPreviewFile, dir.c_str(), 0 );
 	m_CallOldApiResultSubmitItemDownload.Set( res, this, &CP2MapPublisher::OnOldApiSubmitItemDownload );
 	SteamHelper::StartLoopCall();
@@ -368,11 +368,7 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 			buffer.open( QIODevice::ReadWrite );
 			image.scaled( 1914, 1078, Qt::KeepAspectRatio );
 			image.save( &buffer, "JPG" );
-//			if ( !QDir( "resources" ).exists() )
-//			{
-//				std::filesystem::create_directory(std::filesystem::path((QDir::currentPath() + "/resources").toStdString().c_str()));
-//			}
-			QString filepath = QString( QDir::currentPath() + "/resources/AdditionImage" + QString( std::to_string( i ).c_str() ) + ".jpg" );
+			QString filepath = QString( QDir::tempPath() + "/AdditionImage" + QString( std::to_string( i ).c_str() ) + ".jpg" );
 			QFile file( filepath );
 			file.open( QIODevice::ReadWrite );
 			file.write( ba );
@@ -399,7 +395,7 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 
 void CP2MapPublisher::OnOldApiSubmitItemDownload( RemoteStorageDownloadUGCResult_t *pItem, bool pFailure )
 {
-	std::string filepath = QDir::currentPath().toStdString() + "/resources/" + std::to_string( m_editItemDetails.m_nPublishedFileId ) + "_Image0.png";
+	std::string filepath = QDir::tempPath().toStdString() + "/" + std::to_string( m_editItemDetails.m_nPublishedFileId ) + "_Image0.png";
 	QPixmap tempMap = QPixmap( filepath.c_str() );
 	if ( tempMap.isNull() )
 		tempMap = QPixmap( ":/zoo_textures/InvalidImage.png" );
@@ -433,15 +429,8 @@ void CP2MapPublisher::OpenImageFileExplorer()
 	// QImage image(filePath);
 	QPixmap thumbnail( filePath );
 	thumbnail = thumbnail.scaled( 1914, 1078, Qt::IgnoreAspectRatio );
-//	if ( !QDir( "resources" ).exists() )
-//	{
 
-		//std::filesystem::create_directory(std::filesystem::path((QDir::currentPath() + "/resources").toStdString().c_str()));
-//		QDir("./").mkdir( "resources" );
-//		QDir( "resources" );
-//	}
-
-	QString filepath = QString( QDir::currentPath() + "/resources/AdditionImageCurrentThumbnail.jpg" );
+	QString filepath = QString( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg" );
 	if ( thumbnail.save( filepath, "jpg" ) ){
 		defaultFileLocIMG = fPathOG;
 	}
