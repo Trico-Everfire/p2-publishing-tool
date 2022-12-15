@@ -19,7 +19,6 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QPixmap>
-#include <QRegExp>
 #include <QUrl>
 #include <QtCore/QVariant>
 #include <QtGui/QIcon>
