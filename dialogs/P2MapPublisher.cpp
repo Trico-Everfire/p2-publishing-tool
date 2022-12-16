@@ -366,8 +366,8 @@ void CP2MapPublisher::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, b
 			QByteArray ba;
 			QBuffer buffer( &ba );
 			buffer.open( QIODevice::ReadWrite );
-			image.scaled( 1914, 1078, Qt::KeepAspectRatio );
-			image.save( &buffer, "JPG" );
+			image = image.scaled( 1914, 1078, Qt::KeepAspectRatio );
+			image.save( &buffer, "JPEG");
 			QString filepath = QString( QDir::tempPath() + "/AdditionImage" + QString( std::to_string( i ).c_str() ) + ".jpg" );
 			QFile file( filepath );
 			file.open( QIODevice::ReadWrite );
@@ -431,10 +431,11 @@ void CP2MapPublisher::OpenImageFileExplorer()
 	thumbnail = thumbnail.scaled( 1914, 1078, Qt::IgnoreAspectRatio );
 
 	QString filepath = QString( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg" );
-	if ( thumbnail.save( filepath, "jpg" ) ){
-		defaultFileLocIMG = fPathOG;
+	if ( !thumbnail.save( filepath, "JPEG" ) ){
+		QMessageBox::critical(this, "WHAT THE FUCK?!", "Oh oh... stinkie! Windows is fucky wucky UwU, it doesn't like you!" );
+		exit(0);
 	}
-
+	defaultFileLocIMG = fPathOG;
 }
 
 void CP2MapPublisher::OpenBSPFileExplorer()
