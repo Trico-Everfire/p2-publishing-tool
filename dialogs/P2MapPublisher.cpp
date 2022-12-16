@@ -432,13 +432,10 @@ void CP2MapPublisher::OpenImageFileExplorer()
 
 	QString filepath = QString( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg" );
 	QByteArray brAy = QByteArray();
+	qInfo() << QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg";
+	if(thumbnail.save( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg", "JPG" ));
 
-	thumbnail.save( brAy, "JPG" );
 
-	auto file = QFile(filepath);
-	file.open(QFile::WriteOnly);
-	file.write((brAy));
-	file.close();
 	defaultFileLocIMG = fPathOG;
 }
 
