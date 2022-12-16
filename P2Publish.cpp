@@ -3,13 +3,12 @@
 
 #include <QApplication>
 #include <QIcon>
-#include <QSharedMemory>
 #include <QCommonStyle>
 #include <QStyleFactory>
 
-#if defined(_WIN32) && defined(NDEBUG)
-	#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-#endif
+//#if defined(_WIN32) && defined(NDEBUG)
+//	#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+//#endif
 
 int main( int argc, char **argv )
 {

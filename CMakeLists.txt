@@ -67,7 +67,10 @@ set(P2_MAP_PUBLISHER_SRC
 		)
 list(APPEND P2_MAP_PUBLISHER_SRC ${P2_MAP_PUBLISHER_HEADERS})
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui Network )
+
+#qt_import_plugins(${PROJECT_NAME} INCLUDE Qt::QImageIOPlugin)
+#qt_import_plugins(${PROJECT_NAME} INCLUDE_BY_TYPE imageformats QJpegPlugin)
 
 set(APP_ICON_RESOURCE_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR}/res/appicon.rc)
 
