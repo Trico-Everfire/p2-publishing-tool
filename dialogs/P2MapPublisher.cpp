@@ -416,6 +416,7 @@ void CP2MapPublisher::OpenImageFileExplorer()
 	if ( filePath.isEmpty() )
 		return;
 	QPixmap tempMap = QPixmap( filePath );
+	qInfo() << tempMap.isNull();
 	if ( tempMap.isNull() )
 	{
 		filePath = ":/zoo_textures/InvalidImage.png";
@@ -423,17 +424,20 @@ void CP2MapPublisher::OpenImageFileExplorer()
 	}
 	tempMap = tempMap.scaled( 239, 134., Qt::IgnoreAspectRatio );
 	pImageLabel->setPixmap( tempMap );
-
 	if ( tempMap.isNull() )
+	{
+		qInfo() << "Something went wrong I can feel it.";
 		return;
+	}
 	// QImage image(filePath);
 	QPixmap thumbnail( filePath );
 	thumbnail = thumbnail.scaled( 1914, 1078, Qt::IgnoreAspectRatio );
 
 	QString filepath = QString( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg" );
-	QByteArray brAy = QByteArray();
+	//QByteArray brAy = QByteArray();
 	qInfo() << QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg";
-	if(thumbnail.save( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg", "JPG" ));
+	qInfo() << thumbnail.save( QDir::tempPath() + "/AdditionImageCurrentThumbnail.jpg", "JPG" );
+	//if();
 
 
 	defaultFileLocIMG = fPathOG;
