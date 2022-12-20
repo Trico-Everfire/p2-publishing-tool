@@ -69,6 +69,8 @@ list(APPEND P2_MAP_PUBLISHER_SRC ${P2_MAP_PUBLISHER_HEADERS})
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui Network )
 
+find_package(OpenSSL REQUIRED)
+
 #qt_import_plugins(${PROJECT_NAME} INCLUDE Qt::QImageIOPlugin)
 #qt_import_plugins(${PROJECT_NAME} INCLUDE_BY_TYPE imageformats QJpegPlugin)
 
@@ -101,14 +103,13 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/resources)
 
 add_executable(${PROJECT_NAME} ${P2_MAP_PUBLISHER_SRC} res/zoo_textures.qrc libs/theme/breeze.qrc ${APP_ICON_RESOURCE_WINDOWS} ${link_target})
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${P2_MAP_PUBLISHER_HEADERS})
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Network ${STEAM_API} keyvalues)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Network ${STEAM_API} keyvalues OpenSSL::SSL OpenSSL::Crypto)
 target_link_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/redistributable_bin")
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${QT_INCLUDE} ${QT_INCLUDE}/QtWidgets" "${QT_INCLUDE}/QtGui" "${QT_INCLUDE}/QtCore" "${QT_INCLUDE}/QtNetwork")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/public/steam")
-#include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/libs/Steam-Workshop-API/sdk/public/steam")
 
 
 if(WIN32)
@@ -117,6 +118,9 @@ if(WIN32)
 	configure_file("${QT_BASEDIR}/bin/Qt6Gui.dll"     "${CMAKE_BINARY_DIR}/Qt6Gui.dll"     COPYONLY)
 	configure_file("${QT_BASEDIR}/bin/Qt6Widgets.dll" "${CMAKE_BINARY_DIR}/Qt6Widgets.dll" COPYONLY)
 	configure_file("${QT_BASEDIR}/bin/Qt6Network.dll" "${CMAKE_BINARY_DIR}/Qt6Network.dll" COPYONLY)
+	configure_file("${QT_BASEDIR}/../../Tools/OpenSSL/win_64/bin/libcrypto-1_1-x64.dll" "${CMAKE_BINARY_DIR}/libcrypto-1_1-x64.dll" COPYONLY)
+	configure_file("${QT_BASEDIR}/../../Tools/OpenSSL/win_64/bin/libcrypto-1_1-x64.dll" "${CMAKE_BINARY_DIR}/libcrypto-1_1-x64.dll" COPYONLY)
+
 	configure_file("${QT_BASEDIR}/plugins/platforms/qwindows.dll"         "${CMAKE_BINARY_DIR}/platforms/qwindows.dll"         COPYONLY)
 	configure_file("${QT_BASEDIR}/plugins/platforms/qwindowsd.dll"        "${CMAKE_BINARY_DIR}/platforms/qwindowsd.dll"        COPYONLY)
 endif()
