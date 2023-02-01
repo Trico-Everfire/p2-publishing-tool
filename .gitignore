@@ -4,8 +4,8 @@ build
 .ccls-cache
 
 # Libs
-libs/Steam-API
-
+libs/Steam-API/
+!libs/Steam-API/.gitkeep
 # CMake with Visual Studio
 .vs/
 CMakeFiles/

@@ -1,28 +1,31 @@
 #pragma once
 
-#include <QDialog>
-#include <QTreeWidget>
-#include <QComboBox>
-#include <QTimer>
 #include "steam_api.h"
 
-namespace ui {
+#include <QComboBox>
+#include <QDialog>
+#include <QTimer>
+#include <QTreeWidget>
 
-    class CMainView : public QDialog {
-        std::map<int, SteamUGCDetails_t> m_SteamUGCDetailsList;
-        QTimer m_CallbackTimer;
+namespace ui
+{
 
-    public:
-        CMainView(QWidget *pParent = nullptr);
-        static constexpr AppId_t ConsumerID = 620;
-        void OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pQuery, bool bFailure);
+	class CMainView : public QDialog
+	{
+		std::map<int, SteamUGCDetails_t> m_SteamUGCDetailsList;
+		QTimer m_CallbackTimer;
 
-        QTreeWidget *m_pWorkshopItemTree;
-        QComboBox *m_pTimezoneComboBox;
+	public:
+		CMainView( QWidget *pParent = nullptr );
+		static constexpr AppId_t ConsumerID = 620;
+		void OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
 
-        CCallResult<CMainView, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
+		QTreeWidget *m_pWorkshopItemTree;
+		QComboBox *m_pTimezoneComboBox;
 
-        void PopulateWorkshopList();
-    };
+		CCallResult<CMainView, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
 
-}
+		void PopulateWorkshopList();
+	};
+
+} // namespace ui
