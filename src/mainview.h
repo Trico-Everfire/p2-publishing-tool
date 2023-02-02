@@ -24,8 +24,11 @@ namespace ui
 		QComboBox *m_pTimezoneComboBox;
 
 		CCallResult<CMainView, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
+		CCallResult<CMainView, DeleteItemResult_t> m_CallResultDeleteItem;
 
 		void PopulateWorkshopList();
+		void onDeletePressed();
+		void OnDeleteItem( DeleteItemResult_t *pItem, bool bFailure );
 	};
 
 } // namespace ui

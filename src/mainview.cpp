@@ -1,8 +1,10 @@
 #include "mainview.h"
 
+#include <QCheckBox>
 #include <QGridLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QTimeZone>
 
 using namespace ui;
@@ -14,6 +16,8 @@ CMainView::CMainView( QWidget *pParent ) :
 
 	auto pMainViewLayout = new QGridLayout( this );
 
+	pMainViewLayout->setAlignment( Qt::AlignTop );
+
 	m_pWorkshopItemTree = new QTreeWidget( this );
 	auto qStringList = QStringList();
 	qStringList.append( "Title" );
@@ -23,18 +27,19 @@ CMainView::CMainView( QWidget *pParent ) :
 	m_pWorkshopItemTree->headerItem()->setTextAlignment( 0, Qt::AlignCenter );
 	m_pWorkshopItemTree->headerItem()->setTextAlignment( 1, Qt::AlignCenter );
 	m_pWorkshopItemTree->headerItem()->setTextAlignment( 2, Qt::AlignCenter );
-	m_pWorkshopItemTree->setColumnWidth( 0, 700 / 3 );
-	m_pWorkshopItemTree->setColumnWidth( 1, 700 / 3 );
-	m_pWorkshopItemTree->setColumnWidth( 2, 700 / 3 );
+	m_pWorkshopItemTree->setColumnWidth( 0, 600 / 3 );
+	m_pWorkshopItemTree->setColumnWidth( 1, 600 / 3 );
+	m_pWorkshopItemTree->setColumnWidth( 2, 600 / 3 );
+	m_pWorkshopItemTree->setMinimumSize( 600, 100 );
 
-	pMainViewLayout->addWidget( m_pWorkshopItemTree, 0, 0, 1, 6 );
+	pMainViewLayout->addWidget( m_pWorkshopItemTree, 0, 0, 4, 6 );
 
 	auto pTimezoneLabel = new QLabel( "Timezone:", this );
 	auto timezoneFont = pTimezoneLabel->font();
 	timezoneFont.setPointSizeF( timezoneFont.pointSizeF() * 1.4 );
 	pTimezoneLabel->setFont( timezoneFont );
 
-	pMainViewLayout->addWidget( pTimezoneLabel, 1, 0, 1, 0, Qt::AlignLeft );
+	pMainViewLayout->addWidget( pTimezoneLabel, 5, 0, 1, 0, Qt::AlignLeft );
 
 	m_pTimezoneComboBox = new QComboBox( this );
 	foreach( auto timezoneID, QTimeZone::availableTimeZoneIds() )
@@ -43,9 +48,23 @@ CMainView::CMainView( QWidget *pParent ) :
 	QDateTime time = QDateTime::currentDateTime();
 	m_pTimezoneComboBox->setCurrentIndex( QTimeZone::availableTimeZoneIds().indexOf( time.timeZone().id() ) );
 
-	pMainViewLayout->addWidget( m_pTimezoneComboBox, 1, 1, Qt::AlignLeft );
+	pMainViewLayout->addWidget( m_pTimezoneComboBox, 5, 1, Qt::AlignLeft );
 
-	pMainViewLayout->setSpacing( 0 );
+	auto pAddButton = new QPushButton( "Add", this );
+	pMainViewLayout->addWidget( pAddButton, 0, 6, Qt::AlignRight );
+
+	auto pDeleteButton = new QPushButton( "Delete", this );
+	pDeleteButton->setEnabled( false );
+	pMainViewLayout->addWidget( pDeleteButton, 1, 6, Qt::AlignRight );
+
+	auto pEditButton = new QPushButton( "Edit", this );
+	pEditButton->setEnabled( false );
+	pMainViewLayout->addWidget( pEditButton, 2, 6, Qt::AlignRight );
+
+	auto pRefreshButton = new QPushButton( "Refresh", this );
+	pMainViewLayout->addWidget( pRefreshButton, 3, 6, Qt::AlignRight );
+
+	pDeleteButton->setEnabled( false );
 
 	m_CallbackTimer.setSingleShot( false );
 	connect( &m_CallbackTimer, &QTimer::timeout, this, []()
@@ -70,9 +89,31 @@ CMainView::CMainView( QWidget *pParent ) :
 				 }
 			 } );
 
-	this->PopulateWorkshopList();
+	connect( pAddButton, &QPushButton::pressed, this, [] {
 
-	this->resize( 740, 300 );
+	} );
+
+	connect( pDeleteButton, &QPushButton::pressed, this, [this]
+			 {
+				 this->onDeletePressed();
+			 } );
+
+	connect( pEditButton, &QPushButton::pressed, this, [] {
+
+	} );
+
+	connect( pRefreshButton, &QPushButton::pressed, this, [this]
+			 {
+				 this->PopulateWorkshopList();
+			 } );
+
+	connect( m_pWorkshopItemTree, &QTreeWidget::itemSelectionChanged, this, [pEditButton, pDeleteButton, this]
+			 {
+				 pEditButton->setEnabled( m_pWorkshopItemTree->selectedItems().length() > 0 );
+				 pDeleteButton->setEnabled( m_pWorkshopItemTree->selectedItems().length() > 0 );
+			 } );
+
+	this->PopulateWorkshopList();
 }
 
 void CMainView::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure )
@@ -121,4 +162,44 @@ void CMainView::PopulateWorkshopList()
 	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
 	m_SteamCallResultUGCRequest.Set( hApiQueryHandle, this, &CMainView::OnSendQueryUGCRequest );
 	SteamUGC()->ReleaseQueryUGCRequest( hQueryResult );
+}
+
+void CMainView::onDeletePressed()
+{
+	QMessageBox box( QMessageBox::Icon::Critical, "DELETING ITEM", "This action will delete this item permanently from the workshop!", QMessageBox::Ok | QMessageBox::Abort, this );
+	QCheckBox *checkbox = new QCheckBox( "I understand that this will delete this item from the workshop.", &box );
+	box.button( QMessageBox::Ok )->setDisabled( true );
+	connect( checkbox, &QCheckBox::stateChanged, this, [&]( int state )
+			 {
+				 if ( state == 0 )
+				 {
+					 box.button( QMessageBox::Ok )->setDisabled( true );
+				 }
+				 else
+				 {
+					 box.button( QMessageBox::Ok )->setDisabled( false );
+				 }
+			 } );
+	box.setCheckBox( checkbox );
+	int ret = box.exec();
+
+	if ( ret == QMessageBox::Ok && checkbox->isChecked() )
+	{
+		QTreeWidgetItem *item = this->m_pWorkshopItemTree->selectedItems()[0];
+		int itemIndex = item->data( 1, Qt::UserRole ).toInt();
+		SteamUGCDetails_t Details = m_SteamUGCDetailsList.at( itemIndex );
+		SteamAPICall_t call = SteamUGC()->DeleteItem( Details.m_nPublishedFileId );
+		m_CallResultDeleteItem.Set( call, this, &CMainView::OnDeleteItem );
+	}
+}
+
+void CMainView::OnDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
+{
+	if ( bFailure )
+	{
+		QMessageBox::critical( nullptr, "Fatal Error", "Failed to delete item." );
+		return;
+	}
+
+	this->PopulateWorkshopList();
 }
