@@ -1,9 +1,17 @@
 #include "mainview.h"
 
+#include "mapuploader.h"
+
 #include <QCheckBox>
+#include <QDir>
+#include <QEventLoop>
 #include <QGridLayout>
+#include <QImageReader>
 #include <QLabel>
 #include <QMessageBox>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QPushButton>
 #include <QTimeZone>
 
@@ -15,8 +23,6 @@ CMainView::CMainView( QWidget *pParent ) :
 	this->setWindowTitle( "Portal 2 Map Uploader" );
 
 	auto pMainViewLayout = new QGridLayout( this );
-
-	pMainViewLayout->setAlignment( Qt::AlignTop );
 
 	m_pWorkshopItemTree = new QTreeWidget( this );
 	auto qStringList = QStringList();
@@ -30,16 +36,13 @@ CMainView::CMainView( QWidget *pParent ) :
 	m_pWorkshopItemTree->setColumnWidth( 0, 600 / 3 );
 	m_pWorkshopItemTree->setColumnWidth( 1, 600 / 3 );
 	m_pWorkshopItemTree->setColumnWidth( 2, 600 / 3 );
-	m_pWorkshopItemTree->setMinimumSize( 600, 100 );
+	m_pWorkshopItemTree->setMinimumSize( 640, 200 );
 
 	pMainViewLayout->addWidget( m_pWorkshopItemTree, 0, 0, 4, 6 );
 
 	auto pTimezoneLabel = new QLabel( "Timezone:", this );
-	auto timezoneFont = pTimezoneLabel->font();
-	timezoneFont.setPointSizeF( timezoneFont.pointSizeF() * 1.4 );
-	pTimezoneLabel->setFont( timezoneFont );
 
-	pMainViewLayout->addWidget( pTimezoneLabel, 5, 0, 1, 0, Qt::AlignLeft );
+	pMainViewLayout->addWidget( pTimezoneLabel, 5, 0, Qt::AlignLeft | Qt::AlignBottom );
 
 	m_pTimezoneComboBox = new QComboBox( this );
 	foreach( auto timezoneID, QTimeZone::availableTimeZoneIds() )
@@ -48,23 +51,25 @@ CMainView::CMainView( QWidget *pParent ) :
 	QDateTime time = QDateTime::currentDateTime();
 	m_pTimezoneComboBox->setCurrentIndex( QTimeZone::availableTimeZoneIds().indexOf( time.timeZone().id() ) );
 
-	pMainViewLayout->addWidget( m_pTimezoneComboBox, 5, 1, Qt::AlignLeft );
+	pMainViewLayout->addWidget( m_pTimezoneComboBox, 5, 1, Qt::AlignLeft | Qt::AlignBottom );
+
+	auto pButtonLayout = new QVBoxLayout();
 
 	auto pAddButton = new QPushButton( "Add", this );
-	pMainViewLayout->addWidget( pAddButton, 0, 6, Qt::AlignRight );
+	pButtonLayout->addWidget( pAddButton );
 
 	auto pDeleteButton = new QPushButton( "Delete", this );
 	pDeleteButton->setEnabled( false );
-	pMainViewLayout->addWidget( pDeleteButton, 1, 6, Qt::AlignRight );
+	pButtonLayout->addWidget( pDeleteButton );
 
 	auto pEditButton = new QPushButton( "Edit", this );
 	pEditButton->setEnabled( false );
-	pMainViewLayout->addWidget( pEditButton, 2, 6, Qt::AlignRight );
+	pButtonLayout->addWidget( pEditButton );
 
 	auto pRefreshButton = new QPushButton( "Refresh", this );
-	pMainViewLayout->addWidget( pRefreshButton, 3, 6, Qt::AlignRight );
+	pButtonLayout->addWidget( pRefreshButton );
 
-	pDeleteButton->setEnabled( false );
+	pMainViewLayout->addLayout( pButtonLayout, 0, 6, Qt::AlignLeft );
 
 	m_CallbackTimer.setSingleShot( false );
 	connect( &m_CallbackTimer, &QTimer::timeout, this, []()
@@ -78,33 +83,37 @@ CMainView::CMainView( QWidget *pParent ) :
 			 {
 				 QTimeZone zone = QTimeZone( QByteArray::fromStdString( index.toStdString() ) );
 				 QTreeWidgetItemIterator workshopListIterator( m_pWorkshopItemTree );
-				 int i = 0;
-				 while ( *workshopListIterator )
+				 for ( ; *workshopListIterator; ++workshopListIterator )
 				 {
 					 QDateTime time = QDateTime::fromSecsSinceEpoch( ( *workshopListIterator )->data( 0, Qt::UserRole ).toInt(),
 																	 zone );
 					 ( *workshopListIterator )->setText( 2, time.toString() );
-					 i++;
-					 ++workshopListIterator;
 				 }
 			 } );
 
-	connect( pAddButton, &QPushButton::pressed, this, [] {
-
-	} );
+	connect( pAddButton, &QPushButton::pressed, this, [this]
+			 {
+				 auto pMapUploader = CMapUploader( this );
+				 pMapUploader.exec();
+			 } );
 
 	connect( pDeleteButton, &QPushButton::pressed, this, [this]
 			 {
 				 this->onDeletePressed();
 			 } );
 
-	connect( pEditButton, &QPushButton::pressed, this, [] {
-
-	} );
+	connect( pEditButton, &QPushButton::pressed, this, [this]
+			 {
+				 if ( !m_pWorkshopItemTree->currentItem() )
+					 return;
+				 auto pMapUploader = CMapUploader( this );
+				 pMapUploader.setEditItem( m_SteamUGCDetailsList[m_pWorkshopItemTree->currentItem()->data( 1, Qt::UserRole ).toInt()] );
+				 pMapUploader.exec();
+			 } );
 
 	connect( pRefreshButton, &QPushButton::pressed, this, [this]
 			 {
-				 this->PopulateWorkshopList();
+				 this->populateWorkshopList();
 			 } );
 
 	connect( m_pWorkshopItemTree, &QTreeWidget::itemSelectionChanged, this, [pEditButton, pDeleteButton, this]
@@ -113,10 +122,10 @@ CMainView::CMainView( QWidget *pParent ) :
 				 pDeleteButton->setEnabled( m_pWorkshopItemTree->selectedItems().length() > 0 );
 			 } );
 
-	this->PopulateWorkshopList();
+	this->populateWorkshopList();
 }
 
-void CMainView::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure )
+void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure )
 {
 	if ( bFailure )
 	{
@@ -127,10 +136,46 @@ void CMainView::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 	m_SteamUGCDetailsList.clear();
 	m_pWorkshopItemTree->clear();
 
+	auto fullUGCDetails = FullUGCDetails {};
+
 	for ( int index = 0; index < pQuery->m_unNumResultsReturned; index++ )
 	{
 		SteamUGCDetails_t pDetails {};
+
 		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, index, &pDetails );
+
+		char previewURL[MAX_URL_SIZE];
+		SteamUGC()->GetQueryUGCPreviewURL(pQuery->m_handle, index, previewURL, MAX_URL_SIZE);
+
+		QByteArray imageData{};
+		auto fileName = CMainView::downloadImageFromURL(QString(previewURL), imageData);
+
+		auto fileDirectory = QDir::tempPath() + "/" + QString::number(pDetails.m_nPublishedFileId);
+		if ( !CMainView::isFileWritable(fileDirectory))
+		{
+			QMessageBox::critical( nullptr, "Fatal Error", "Unable to create directory. (Permission Denied)" );
+			continue;
+		}
+
+		if(!QDir(fileDirectory).exists())
+			QDir().mkpath(fileDirectory);
+
+		auto filePath = fileDirectory + "/" + fileName;
+
+		if ( !CMainView::isFileWritable(filePath) )
+		{
+			QMessageBox::critical( nullptr, "Fatal Error", "Unable to download thumbnail. (Permission Denied)" );
+			continue;
+		}
+
+		auto thumbnailFile = QFile(filePath);
+		thumbnailFile.open(QFile::WriteOnly);
+		thumbnailFile.write(imageData);
+		thumbnailFile.close();
+
+		fullUGCDetails.standardDetails = pDetails;
+		fullUGCDetails.thumbnailDetails = filePath;
+		fullUGCDetails.additionalDetails = getAdditionalUGCPreviews( pQuery->m_handle, index, pDetails.m_nPublishedFileId );
 
 		QDateTime time = QDateTime::fromSecsSinceEpoch( pDetails.m_rtimeUpdated );
 		time.setTimeZone( QTimeZone( QByteArray( m_pTimezoneComboBox->currentText().toStdString().c_str() ) ) );
@@ -148,52 +193,168 @@ void CMainView::OnSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 		pWorkshopitem->setTextAlignment( 2, Qt::AlignCenter );
 		m_pWorkshopItemTree->addTopLevelItem( pWorkshopitem );
 
-		m_SteamUGCDetailsList.insert( std::make_pair( index, pDetails ) );
+		m_SteamUGCDetailsList.insert( std::make_pair( index, fullUGCDetails ) );
 	}
 }
 
-void CMainView::PopulateWorkshopList()
+bool CMainView::isFileWritable(const QString& fullPath)
+{
+	auto fileInfo = QFileInfo( fullPath );
+	auto filePathInfo = QFileInfo( fileInfo.path() );
+
+	return ( filePathInfo.isWritable() || fileInfo.isWritable() );
+}
+
+CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int itemIndex, PublishedFileId_t fileID )
+{
+	auto additionalDetails = AdditionalUGCDetails {};
+
+	auto iCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews( queryHandle, itemIndex );
+	for ( uint32 i = 0; i < iCount; i++ )
+	{
+
+		char pchUrl[MAX_URL_SIZE];
+		char pchFileName[MAX_URL_SIZE];
+		EItemPreviewType pType;
+
+		SteamUGC()->GetQueryUGCAdditionalPreview( queryHandle, itemIndex, i,
+												  pchUrl, MAX_URL_SIZE, pchFileName,
+												  MAX_URL_SIZE, &pType );
+
+		if ( pType == k_EItemPreviewType_Image )
+		{
+			QByteArray imageData{};
+
+			auto fileName = downloadImageFromURL(pchUrl, imageData);
+
+			auto fileDirectory = QDir::tempPath() + "/" + QString::number(fileID);
+			if ( !CMainView::isFileWritable(fileDirectory))
+			{
+				QMessageBox::critical( nullptr, "Fatal Error", "Unable to create directory. (Permission Denied)" );
+				return AdditionalUGCDetails {};
+			}
+
+			if(!QDir(fileDirectory).exists())
+				QDir().mkpath(fileDirectory);
+
+			fileDirectory += "/additional";
+
+			if(!QDir(fileDirectory).exists())
+				QDir().mkpath(fileDirectory);
+
+			auto filePath = fileDirectory + "/" + fileName;
+
+			if ( !CMainView::isFileWritable(filePath) )
+			{
+				QMessageBox::critical( nullptr, "Fatal Error", "Unable to download additional images. (Permission Denied)" );
+				return AdditionalUGCDetails {};
+			}
+
+			if ( !CMainView::isFileWritable( filePath ) )
+			{
+				QMessageBox::critical( nullptr, "Fatal Error", "Unable to download images. (Permission Denied)" );
+				return AdditionalUGCDetails {};
+			}
+
+			auto additionalImageFile = QFile(filePath);
+			additionalImageFile.open(QFile::WriteOnly);
+			additionalImageFile.write(imageData);
+			additionalImageFile.close();
+
+			auto fileInfoList = QStringList {};
+			fileInfoList.append( pchFileName );
+			fileInfoList.append( filePath );
+
+			additionalDetails.imagePaths.append( fileInfoList );
+		}
+		if ( pType == k_EItemPreviewType_YouTubeVideo )
+		{
+			additionalDetails.videoURLs.append( pchUrl );
+			break;
+		}
+	}
+
+	return additionalDetails;
+}
+
+QString CMainView::downloadImageFromURL( const QString &url, QByteArray& imageData )
+{
+	QNetworkAccessManager manager;
+	QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( url ) ) );
+
+	QEventLoop wait;
+	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &wait, SLOT( quit() ) );
+	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &manager, SLOT( deleteLater() ) );
+
+	QTimer oneTake;
+	oneTake.start( 10000 );
+	connect( &oneTake, SIGNAL( timeout() ), &wait, SLOT( quit() ) );
+	wait.exec();
+
+	QRegularExpression filenameRegex(R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))");
+	auto filenameMatch = filenameRegex.match(reply->rawHeader("Content-Disposition"));
+	auto fileName = filenameMatch.captured("fileName").replace("UTF-8''", "").replace(R"(")","");
+
+	QImageReader imageReader(reply);
+	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
+	{
+		QMessageBox::critical( nullptr, "Failed Download",( QString( "Failed retrieve image : " ) + url) );
+		return "";
+	}
+
+	imageData = reply->readAll();
+
+	reply->deleteLater();
+
+	return fileName;
+}
+
+void CMainView::populateWorkshopList()
 {
 	UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(),
 																		   k_EUserUGCList_Published,
 																		   k_EUGCMatchingUGCType_Items_ReadyToUse,
 																		   k_EUserUGCListSortOrder_CreationOrderDesc,
-																		   SteamUtils()->GetAppID(), ConsumerID, 1 );
+																		   SteamUtils()->GetAppID(), m_GameID, 1 );
+	SteamUGC()->SetReturnAdditionalPreviews( hQueryResult, true );
+	SteamUGC()->SetReturnLongDescription( hQueryResult, true );
+	SteamUGC()->SetReturnMetadata( hQueryResult, true );
 	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
-	m_SteamCallResultUGCRequest.Set( hApiQueryHandle, this, &CMainView::OnSendQueryUGCRequest );
+	m_SteamCallResultUGCRequest.Set( hApiQueryHandle, this, &CMainView::onSendQueryUGCRequest );
 	SteamUGC()->ReleaseQueryUGCRequest( hQueryResult );
 }
 
 void CMainView::onDeletePressed()
 {
-	QMessageBox box( QMessageBox::Icon::Critical, "DELETING ITEM", "This action will delete this item permanently from the workshop!", QMessageBox::Ok | QMessageBox::Abort, this );
-	QCheckBox *checkbox = new QCheckBox( "I understand that this will delete this item from the workshop.", &box );
-	box.button( QMessageBox::Ok )->setDisabled( true );
-	connect( checkbox, &QCheckBox::stateChanged, this, [&]( int state )
+	QMessageBox deleteWarningMessageBox( QMessageBox::Icon::Critical, "DELETING ITEM", "This action will delete this item permanently from the workshop!", QMessageBox::Ok | QMessageBox::Abort, this );
+	QCheckBox *deleteWarningMessageCheckBox = new QCheckBox( "I understand that this will delete this item from the workshop.", &deleteWarningMessageBox );
+	deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( true );
+	connect( deleteWarningMessageCheckBox, &QCheckBox::stateChanged, this, [&]( int state )
 			 {
 				 if ( state == 0 )
 				 {
-					 box.button( QMessageBox::Ok )->setDisabled( true );
+					 deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( true );
 				 }
 				 else
 				 {
-					 box.button( QMessageBox::Ok )->setDisabled( false );
+					 deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( false );
 				 }
 			 } );
-	box.setCheckBox( checkbox );
-	int ret = box.exec();
 
-	if ( ret == QMessageBox::Ok && checkbox->isChecked() )
+	deleteWarningMessageBox.setCheckBox( deleteWarningMessageCheckBox );
+	int ret = deleteWarningMessageBox.exec();
+
+	if ( ret == QMessageBox::Ok && deleteWarningMessageCheckBox->isChecked() )
 	{
-		QTreeWidgetItem *item = this->m_pWorkshopItemTree->selectedItems()[0];
-		int itemIndex = item->data( 1, Qt::UserRole ).toInt();
-		SteamUGCDetails_t Details = m_SteamUGCDetailsList.at( itemIndex );
-		SteamAPICall_t call = SteamUGC()->DeleteItem( Details.m_nPublishedFileId );
-		m_CallResultDeleteItem.Set( call, this, &CMainView::OnDeleteItem );
+		QTreeWidgetItem *pWorkshopItem = this->m_pWorkshopItemTree->selectedItems()[0];
+		int itemIndex = pWorkshopItem->data( 1, Qt::UserRole ).toInt();
+		FullUGCDetails workshopItemDetails = m_SteamUGCDetailsList.at( itemIndex );
+		SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( workshopItemDetails.standardDetails.m_nPublishedFileId );
+		m_CallResultDeleteItem.Set( deleteItemCall, this, &CMainView::onDeleteItem );
 	}
 }
 
-void CMainView::OnDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
+void CMainView::onDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
 {
 	if ( bFailure )
 	{
@@ -201,5 +362,5 @@ void CMainView::OnDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
 		return;
 	}
 
-	this->PopulateWorkshopList();
+	this->populateWorkshopList();
 }

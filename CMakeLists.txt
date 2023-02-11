@@ -34,7 +34,7 @@ endif ()
 
 message("Using ${QT_INCLUDE} as our Qt include dir")
 find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui Network)
-list(APPEND LINK_LIBS Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Network)
+list(APPEND LINK_LIBS Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Network keyvalues)
 list(APPEND INC_DIRS ${QT_INCLUDE} ${QT_INCLUDE}/QtWidgets ${QT_INCLUDE}/QtGui ${QT_INCLUDE}/QtNetwork ${QT_INCLUDE}/QtCore)
 
 set(CMAKE_AUTOMOC ON)
@@ -43,31 +43,23 @@ set(CMAKE_AUTORCC ON)
 
 option(USE_STEAM "Uses steam" OFF)
 
-# Steam
-#if (USE_STEAM)
-#    set(STEAM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/steam)
-#    add_library(steam_api64 SHARED IMPORTED)
-#    include_directories("${STEAM_DIR}/public/steam")
-#    list(APPEND LINK_DIRS "${STEAM_DIR}/redistributable_bin")
-#    if (WIN32)
-#        list(APPEND LINK_LIBS win64/steam_api64)
-#    else ()
-#        list(APPEND LINK_LIBS ${CMAKE_BINARY_DIR}/libsteam_api.so)
-#    endif ()
-#
-#    add_compile_definitions(USE_STEAM)
-#endif ()
 
 # Main Application
 set(SRC
         src/main.cpp
         src/mainview.cpp
-        src/mainview.h)
+        src/mainview.h
+        src/mapuploader.cpp
+        src/mapuploader.h
+        src/filedialogpreset.h
+        src/bspentityelementparser.cpp
+        src/bspentityelementparser.h
+        src/bspfilestructure.h)
 
-#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libs/SpeedyKeyV")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libs/SpeedyKeyV")
 #add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libs/SAPP")
 #add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libs/libz-ng-minizip-ng")
-#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/SpeedyKeyV")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/SpeedyKeyV")
 #include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/SAPP")
 #include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/libz-ng-minizip-ng")
 #include_directories(${CMAKE_CURRENT_SOURCE_DIR})

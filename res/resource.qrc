@@ -1,5 +1,9 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="resource">
 	<file>style.qss</file>
+	<file>SampleImage.png</file>
+	<file>InvalidImage.png</file>
+	<file>LoadingImage.png</file>
+	<file>P2MP.ico</file>
 </qresource>
 </RCC>
