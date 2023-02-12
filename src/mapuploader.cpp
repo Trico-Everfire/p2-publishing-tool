@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QGridLayout>
+#include <QImageReader>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSizePolicy>
@@ -37,10 +38,10 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 
 	pDialogLayout->addWidget( m_pPreviewImageLabel, 1, 0 );
 
-	auto pBrowseButton = new QPushButton( tr( "Browse..." ), this );
-	pBrowseButton->setFixedSize( 239, 20 );
+	auto pThumbnailBrowseButton = new QPushButton( tr( "Browse..." ), this );
+	pThumbnailBrowseButton->setFixedSize( 239, 20 );
 
-	pDialogLayout->addWidget( pBrowseButton, 2, 0 );
+	pDialogLayout->addWidget( pThumbnailBrowseButton, 2, 0 );
 
 	m_pAdvancedOptionsButton = new QPushButton( tr( "Advanced Options." ), this );
 	m_pAdvancedOptionsButton->setFixedSize( 239, 40 );
@@ -97,9 +98,9 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 
 	pFileLayout->addWidget( m_pFileEntry );
 
-	auto pBrowseButton2 = new QPushButton( tr( "Browse..." ), this );
+	auto pBSPBrowseButton = new QPushButton( tr( "Browse..." ), this );
 
-	pFileLayout->addWidget( pBrowseButton2 );
+	pFileLayout->addWidget( pBSPBrowseButton );
 
 	pTitleDescLayout->addLayout( pFileLayout );
 
@@ -107,15 +108,62 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 
 	pDialogLayout->setAlignment( Qt::AlignTop );
 
-	connect( pBrowseButton2, &QPushButton::clicked, this, [this]
+	connect( pThumbnailBrowseButton, &QPushButton::clicked, this, [this]
+			 {
+				 QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
+
+				 auto thumbnailImage = QImage( filePath );
+
+				 auto thumbnailFileInfo = QFileInfo( filePath );
+
+				 if ( thumbnailImage.width() == 1914 && thumbnailImage.height() == 1078 && thumbnailFileInfo.size() < 1048576 )
+				 {
+					 m_pPreviewImageLabel->setPixmap( QPixmap::fromImage( thumbnailImage ) );
+					 m_editedThumbnail = true;
+					 m_thumbnailPath = filePath;
+					 return;
+				 }
+
+				 thumbnailImage = thumbnailImage.scaled( 1914, 1078, Qt::KeepAspectRatio );
+
+				 auto thumbnailScaledDirectory = QDir::tempPath() + "/uploader_temp_images/";
+
+				 if ( !QDir( thumbnailScaledDirectory ).exists() )
+					 QDir().mkpath( thumbnailScaledDirectory );
+
+				 if ( !CMainView::isFileWritable( thumbnailScaledDirectory ) )
+				 {
+					 QMessageBox::critical( nullptr, "Fatal Error", "Unable to create temp thumbnail folder. (Permission Denied)" );
+					 return;
+				 }
+
+				 auto thumbnailScaledFilepath = thumbnailScaledDirectory + thumbnailFileInfo.fileName();
+
+				 if ( !CMainView::isFileWritable( thumbnailScaledFilepath ) )
+				 {
+					 QMessageBox::critical( nullptr, "Fatal Error", "Unable to store scaled thumbnail. (Permission Denied)" );
+					 return;
+				 }
+
+				 thumbnailImage.save( thumbnailScaledFilepath );
+				 m_pPreviewImageLabel->setPixmap( QPixmap::fromImage( thumbnailImage ) );
+				 m_editedThumbnail = true;
+				 m_thumbnailPath = thumbnailScaledFilepath;
+			 } );
+
+	connect( pBSPBrowseButton, &QPushButton::clicked, this, [this]
 			 {
 				 QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.bsp", nullptr, FILE_PICKER_OPTS );
+
 				 QStringList tagList {};
-				if( this->retrieveBSP( filePath, tagList ))
+
+				 if ( this->retrieveBSP( filePath, tagList ) )
 				 {
 					 foreach( auto tag, tagList )
-						 m_pAdvancedOptions->addTagWidgetItem( tag, !(tag == "Singleplayer" || tag == "Cooperative") );
-					 m_pAdvancedOptionsButton->setEnabled(true);
+						 m_pAdvancedOptions->addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Cooperative" ) );
+
+					 m_pAdvancedOptionsButton->setEnabled( true );
+					 m_pFileEntry->setText( filePath );
 				 }
 			 } );
 
@@ -183,7 +231,7 @@ void CMapUploader::updateWorkshopItem( PublishedFileId_t publishedFileId )
 {
 }
 
-bool CMapUploader::retrieveBSP( const QString& path, QStringList &tagList )
+bool CMapUploader::retrieveBSP( const QString &path, QStringList &tagList )
 {
 	auto bspFileInfo = QFileInfo( path );
 	if ( !bspFileInfo.isReadable() )
@@ -219,9 +267,7 @@ bool CMapUploader::retrieveBSP( const QString& path, QStringList &tagList )
 	if ( res == CElementList::ListInitResponse::FILEINVALID )
 		QMessageBox::warning( this, "Invalid KV File", "File elements.kv is Invalid. Using default configuration." );
 
-
 	return CMapUploader::getTagsFromEntityStringList( entityStringList, tagList );
-
 }
 
 bool CMapUploader::parseBSPEntitiesToStringList( const QString &rawEntityLump, QStringList &entityList )
@@ -279,7 +325,6 @@ bool CMapUploader::getTagsFromEntityStringList( const QStringList &entityList, Q
 		if ( entityClassName.compare( "info_player_start" ) == 0 && !tagList.contains( "Singleplayer" ) )
 			tagList << "Singleplayer";
 
-
 		if ( entityClassName.compare( "info_coop_spawn" ) == 0 && !tagList.contains( "Cooperative" ) )
 			tagList << "Cooperative";
 
@@ -292,7 +337,7 @@ bool CMapUploader::getTagsFromEntityStringList( const QStringList &entityList, Q
 				continue;
 
 			bool tagSuffices = false;
-			if ( elementEntityKeyValue.childCount != 1  )
+			if ( elementEntityKeyValue.childCount != 1 )
 				for ( int j = 0; j < elementEntityKeyValue.childCount; j++ )
 				{
 					auto &elementEntityValueKeyValue = elementEntityKeyValue[j];

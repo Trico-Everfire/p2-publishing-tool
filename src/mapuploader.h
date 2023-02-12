@@ -64,6 +64,7 @@ namespace ui
 		QLineEdit *m_pFileEntry;
 		QCheckBox *m_pSteamToSAgreement;
 		QLabel *m_pPreviewImageLabel;
+		QString m_thumbnailPath;
 		CAdvancedOptionsDialog *m_pAdvancedOptions;
 
 	public:
