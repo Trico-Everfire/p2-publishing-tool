@@ -19,13 +19,14 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
+          cache: 'true'
           version: 6.4.1
           host: linux
           target: desktop
           dir: '${{github.workspace}}/libs/Qt'
 
       - name: Install Steamworks
-        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}/libs/Steam-Workshop-API/sdk"
+        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}/libs/Steam-API"
 
       - name: Configure CMake
         run: cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/6.4.1/gcc_64'
@@ -62,11 +63,12 @@ jobs:
         uses: jurplel/install-qt-action@v2.14.0
         with:
           dir: '${{github.workspace}}/libs/Qt'
+          cache: 'true'
           version: 6.4.1
           arch: win64_msvc2019_64
 
       - name: Install Steamworks
-        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
+        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-API"
 
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
