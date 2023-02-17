@@ -19,7 +19,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          cache: 'true'
+          cached: 'true'
           version: 6.4.1
           host: linux
           target: desktop
@@ -63,7 +63,7 @@ jobs:
         uses: jurplel/install-qt-action@v2.14.0
         with:
           dir: '${{github.workspace}}/libs/Qt'
-          cache: 'true'
+          cached: 'true'
           version: 6.4.1
           arch: win64_msvc2019_64
 
