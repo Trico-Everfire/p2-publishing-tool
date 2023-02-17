@@ -58,7 +58,7 @@ jobs:
       - name: Checkout submodules
         run: git submodule update --init --recursive
         
-      - name: Install Qt5
+      - name: Install Qt6
         uses: jurplel/install-qt-action@v2.14.0
         with:
           dir: '${{github.workspace}}/libs/Qt'

@@ -153,12 +153,11 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 
 		auto fileDirectory = QDir::tempPath() + "/" + QString::number( pDetails.m_nPublishedFileId );
 
-		if ( !QDir( fileDirectory ).exists() )
-			if ( !QDir().mkpath( fileDirectory ) )
-			{
-				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
-				return;
-			}
+		if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+		{
+			QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+			return;
+		}
 
 		auto filePath = fileDirectory + "/" + fileName;
 
@@ -238,31 +237,28 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 
 			auto fileDirectory = QDir::tempPath() + "/" + QString::number( fileID );
 
-			if ( !QDir( fileDirectory ).exists() )
-				if ( !QDir().mkpath( fileDirectory ) )
-				{
-					QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
-					return AdditionalUGCDetails {};
-				}
+			if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+			{
+				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+				return AdditionalUGCDetails {};
+			}
 
 			fileDirectory += "/additional/";
 
-			if ( !QDir( fileDirectory ).exists() )
-				if ( !QDir().mkpath( fileDirectory ) )
-				{
-					QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
-					return AdditionalUGCDetails {};
-				}
+			if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+			{
+				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+				return AdditionalUGCDetails {};
+			}
 
 			quint32 uniqueFolderName = QRandomGenerator::global()->generate();
 			fileDirectory += QString::number( uniqueFolderName ) + "/";
 
-			if ( !QDir( fileDirectory ).exists() )
-				if ( !QDir().mkpath( fileDirectory ) )
-				{
-					QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
-					return AdditionalUGCDetails {};
-				}
+			if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+			{
+				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+				return AdditionalUGCDetails {};
+			}
 
 			auto filePath = fileDirectory + "/" + fileName;
 
