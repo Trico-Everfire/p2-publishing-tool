@@ -1,7 +1,7 @@
 name: Build
 on:
   push:
-    branches: [ master, fix/thumbnail-fix new/rewrite ]
+    branches: [ master, fix/thumbnail-fix, new/rewrite ]
   workflow_dispatch: # nothing here
 jobs:
   build-linux:
