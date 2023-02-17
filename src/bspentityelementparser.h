@@ -73,7 +73,7 @@ private:
 public:
 	enum class ListInitResponse
 	{
-		FILENOTFOUND,
+		FILENOTFOUND = 0,
 		FILEINVALID,
 		FILEINITIALISED
 	};

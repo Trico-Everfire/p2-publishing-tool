@@ -4,6 +4,8 @@
 
 #include <QApplication>
 #include <QFile>
+#include <QDir>
+#include <QFileInfo>
 #include <QMessageBox>
 
 using namespace ui;
@@ -30,6 +32,12 @@ int main( int argc, char **argv )
 	if ( !SteamAPI_Init() )
 	{
 		QMessageBox::critical( nullptr, "Fatal Error", "Steam must be running to use this tool (SteamAPI_Init() failed)." );
+		return 1;
+	}
+
+	if(!QFileInfo(QDir::tempPath()).isWritable())
+	{
+		QMessageBox::critical( nullptr, "Fatal Error", "We detected that we are unable to write to your computer's temporary files folder.\nTherefore the application cannot write to it. please check your firewall and maybe run the application in administrator." );
 		return 1;
 	}
 

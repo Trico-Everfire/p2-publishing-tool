@@ -15,6 +15,7 @@ namespace ui
 	public:
 		struct AdditionalUGCDetails
 		{
+			int amount = 0;
 			QVector<QStringList> imagePaths {};
 			QVector<QString> videoURLs {};
 		};
@@ -47,8 +48,8 @@ namespace ui
 		void populateWorkshopList();
 		void onDeletePressed();
 		void onDeleteItem( DeleteItemResult_t *pItem, bool bFailure );
-		static AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int itemIndex, PublishedFileId_t fileID );
-		static QString downloadImageFromURL( const QString &url, QByteArray& imageData );
+		CMainView::AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int count, int itemIndex, PublishedFileId_t fileID );
+		QString downloadImageFromURL( const QString &url, QByteArray& imageData );
 		static bool isFileWritable( const QString& fullPath );
 	};
 

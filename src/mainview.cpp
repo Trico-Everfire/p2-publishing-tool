@@ -13,6 +13,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPushButton>
+#include <QRandomGenerator>
 #include <QTimeZone>
 
 using namespace ui;
@@ -25,11 +26,13 @@ CMainView::CMainView( QWidget *pParent ) :
 	auto pMainViewLayout = new QGridLayout( this );
 
 	m_pWorkshopItemTree = new QTreeWidget( this );
-	auto qStringList = QStringList();
-	qStringList.append( "Title" );
-	qStringList.append( "File" );
-	qStringList.append( "Last Updated" );
-	m_pWorkshopItemTree->setHeaderLabels( qStringList );
+
+	auto workshopTreeListTitles = QStringList();
+	workshopTreeListTitles.append( "Title" );
+	workshopTreeListTitles.append( "File" );
+	workshopTreeListTitles.append( "Last Updated" );
+
+	m_pWorkshopItemTree->setHeaderLabels( workshopTreeListTitles );
 	m_pWorkshopItemTree->headerItem()->setTextAlignment( 0, Qt::AlignCenter );
 	m_pWorkshopItemTree->headerItem()->setTextAlignment( 1, Qt::AlignCenter );
 	m_pWorkshopItemTree->headerItem()->setTextAlignment( 2, Qt::AlignCenter );
@@ -72,12 +75,11 @@ CMainView::CMainView( QWidget *pParent ) :
 	pMainViewLayout->addLayout( pButtonLayout, 0, 6, Qt::AlignLeft );
 
 	m_CallbackTimer.setSingleShot( false );
-	connect( &m_CallbackTimer, &QTimer::timeout, this, []()
-			 {
-				 SteamAPI_RunCallbacks();
-			 } );
+	connect( &m_CallbackTimer, &QTimer::timeout, this, SteamAPI_RunCallbacks );
 
 	m_CallbackTimer.start( 100 );
+
+	this->populateWorkshopList();
 
 	connect( m_pTimezoneComboBox, &QComboBox::currentTextChanged, this, [this]( const QString &index )
 			 {
@@ -97,39 +99,32 @@ CMainView::CMainView( QWidget *pParent ) :
 				 pMapUploader.exec();
 			 } );
 
-	connect( pDeleteButton, &QPushButton::pressed, this, [this]
-			 {
-				 this->onDeletePressed();
-			 } );
+	connect( pDeleteButton, &QPushButton::pressed, this, &CMainView::onDeletePressed );
 
 	connect( pEditButton, &QPushButton::pressed, this, [this]
 			 {
 				 if ( !m_pWorkshopItemTree->currentItem() )
 					 return;
+
 				 auto pMapUploader = CMapUploader( this );
 				 pMapUploader.setEditItem( m_SteamUGCDetailsList[m_pWorkshopItemTree->currentItem()->data( 1, Qt::UserRole ).toInt()] );
 				 pMapUploader.exec();
 			 } );
 
-	connect( pRefreshButton, &QPushButton::pressed, this, [this]
-			 {
-				 this->populateWorkshopList();
-			 } );
+	connect( pRefreshButton, &QPushButton::pressed, this, &CMainView::populateWorkshopList );
 
 	connect( m_pWorkshopItemTree, &QTreeWidget::itemSelectionChanged, this, [pEditButton, pDeleteButton, this]
 			 {
 				 pEditButton->setEnabled( m_pWorkshopItemTree->selectedItems().length() > 0 );
 				 pDeleteButton->setEnabled( m_pWorkshopItemTree->selectedItems().length() > 0 );
 			 } );
-
-	this->populateWorkshopList();
 }
 
 void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure )
 {
-	if ( bFailure )
+	if ( bFailure || pQuery->m_eResult != 1 )
 	{
-		QMessageBox::critical( nullptr, "Fatal Error", "Failed retrieve Query." );
+		QMessageBox::critical( this, "Fatal Error", "Failed retrieve Query, Error code: " + QString::number( pQuery->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
 		return;
 	}
 
@@ -145,37 +140,51 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, index, &pDetails );
 
 		char previewURL[MAX_URL_SIZE];
-		SteamUGC()->GetQueryUGCPreviewURL(pQuery->m_handle, index, previewURL, MAX_URL_SIZE);
+		SteamUGC()->GetQueryUGCPreviewURL( pQuery->m_handle, index, previewURL, MAX_URL_SIZE );
 
-		QByteArray imageData{};
-		auto fileName = CMainView::downloadImageFromURL(QString(previewURL), imageData);
-
-		auto fileDirectory = QDir::tempPath() + "/" + QString::number(pDetails.m_nPublishedFileId);
-		if ( !CMainView::isFileWritable(fileDirectory))
+		if ( QString( previewURL ).isEmpty() )
 		{
-			QMessageBox::critical( nullptr, "Fatal Error", "Unable to create directory. (Permission Denied)" );
+			QMessageBox::critical( this, "Fatal Error", "Unable to fetch image URL. (Missing or broken)" );
 			continue;
 		}
 
-		if(!QDir(fileDirectory).exists())
-			QDir().mkpath(fileDirectory);
+		QByteArray imageData {};
+		auto fileName = this->downloadImageFromURL( QString( previewURL ), imageData );
+
+		auto fileDirectory = QDir::tempPath() + "/" + QString::number( pDetails.m_nPublishedFileId );
+
+		if ( !QDir( fileDirectory ).exists() )
+			if ( !QDir().mkpath( fileDirectory ) )
+			{
+				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+				return;
+			}
 
 		auto filePath = fileDirectory + "/" + fileName;
 
-		if ( !CMainView::isFileWritable(filePath) )
+		if ( !CMainView::isFileWritable( filePath ) )
 		{
-			QMessageBox::critical( nullptr, "Fatal Error", "Unable to download thumbnail. (Permission Denied)" );
+			QMessageBox::critical( this, "Fatal Error", "Unable to download thumbnail. (Permission Denied)\n" + filePath );
 			continue;
 		}
 
-		auto thumbnailFile = QFile(filePath);
-		thumbnailFile.open(QFile::WriteOnly);
-		thumbnailFile.write(imageData);
+		auto thumbnailFile = QFile( filePath );
+		thumbnailFile.open( QFile::WriteOnly );
+
+		if ( !thumbnailFile.write( imageData ) )
+		{
+			QMessageBox::critical( this, "Fatal Error", "Unable to download thumbnail. (Permission Denied)\n" + filePath );
+			continue;
+		}
+
 		thumbnailFile.close();
 
 		fullUGCDetails.standardDetails = pDetails;
 		fullUGCDetails.thumbnailDetails = filePath;
-		fullUGCDetails.additionalDetails = getAdditionalUGCPreviews( pQuery->m_handle, index, pDetails.m_nPublishedFileId );
+
+		auto count = SteamUGC()->GetQueryUGCNumAdditionalPreviews( pQuery->m_handle, index );
+
+		fullUGCDetails.additionalDetails = getAdditionalUGCPreviews( pQuery->m_handle, count, index, pDetails.m_nPublishedFileId );
 
 		QDateTime time = QDateTime::fromSecsSinceEpoch( pDetails.m_rtimeUpdated );
 		time.setTimeZone( QTimeZone( QByteArray( m_pTimezoneComboBox->currentText().toStdString().c_str() ) ) );
@@ -197,7 +206,7 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 	}
 }
 
-bool CMainView::isFileWritable(const QString& fullPath)
+bool CMainView::isFileWritable( const QString &fullPath )
 {
 	auto fileInfo = QFileInfo( fullPath );
 	auto filePathInfo = QFileInfo( fileInfo.path() );
@@ -205,14 +214,14 @@ bool CMainView::isFileWritable(const QString& fullPath)
 	return ( filePathInfo.isWritable() || fileInfo.isWritable() );
 }
 
-CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int itemIndex, PublishedFileId_t fileID )
+CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int count, int itemIndex, PublishedFileId_t fileID )
 {
 	auto additionalDetails = AdditionalUGCDetails {};
 
-	auto iCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews( queryHandle, itemIndex );
-	for ( uint32 i = 0; i < iCount; i++ )
-	{
+	additionalDetails.amount = count;
 
+	for ( uint32 i = 0; i < count; i++ )
+	{
 		char pchUrl[MAX_URL_SIZE];
 		char pchFileName[MAX_URL_SIZE];
 		EItemPreviewType pType;
@@ -223,42 +232,54 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 
 		if ( pType == k_EItemPreviewType_Image )
 		{
-			QByteArray imageData{};
+			QByteArray imageData {};
 
-			auto fileName = downloadImageFromURL(pchUrl, imageData);
+			auto fileName = this->downloadImageFromURL( pchUrl, imageData );
 
-			auto fileDirectory = QDir::tempPath() + "/" + QString::number(fileID);
-			if ( !CMainView::isFileWritable(fileDirectory))
-			{
-				QMessageBox::critical( nullptr, "Fatal Error", "Unable to create directory. (Permission Denied)" );
-				return AdditionalUGCDetails {};
-			}
+			auto fileDirectory = QDir::tempPath() + "/" + QString::number( fileID );
 
-			if(!QDir(fileDirectory).exists())
-				QDir().mkpath(fileDirectory);
+			if ( !QDir( fileDirectory ).exists() )
+				if ( !QDir().mkpath( fileDirectory ) )
+				{
+					QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+					return AdditionalUGCDetails {};
+				}
 
-			fileDirectory += "/additional";
+			fileDirectory += "/additional/";
 
-			if(!QDir(fileDirectory).exists())
-				QDir().mkpath(fileDirectory);
+			if ( !QDir( fileDirectory ).exists() )
+				if ( !QDir().mkpath( fileDirectory ) )
+				{
+					QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+					return AdditionalUGCDetails {};
+				}
+
+			quint32 uniqueFolderName = QRandomGenerator::global()->generate();
+			fileDirectory += QString::number( uniqueFolderName ) + "/";
+
+			if ( !QDir( fileDirectory ).exists() )
+				if ( !QDir().mkpath( fileDirectory ) )
+				{
+					QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+					return AdditionalUGCDetails {};
+				}
 
 			auto filePath = fileDirectory + "/" + fileName;
 
-			if ( !CMainView::isFileWritable(filePath) )
-			{
-				QMessageBox::critical( nullptr, "Fatal Error", "Unable to download additional images. (Permission Denied)" );
-				return AdditionalUGCDetails {};
-			}
-
 			if ( !CMainView::isFileWritable( filePath ) )
 			{
-				QMessageBox::critical( nullptr, "Fatal Error", "Unable to download images. (Permission Denied)" );
+				QMessageBox::critical( this, "Fatal Error", "Unable to download additional images. (Permission Denied)\n" + filePath );
 				return AdditionalUGCDetails {};
 			}
 
-			auto additionalImageFile = QFile(filePath);
-			additionalImageFile.open(QFile::WriteOnly);
-			additionalImageFile.write(imageData);
+			auto additionalImageFile = QFile( filePath );
+			additionalImageFile.open( QFile::WriteOnly );
+
+			if(!additionalImageFile.write( imageData ))
+			{
+				QMessageBox::critical( this, "Fatal Error", "Unable to download additional images. (Permission Denied)\n" + filePath );
+				return AdditionalUGCDetails {};
+			}
 			additionalImageFile.close();
 
 			auto fileInfoList = QStringList {};
@@ -277,7 +298,7 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 	return additionalDetails;
 }
 
-QString CMainView::downloadImageFromURL( const QString &url, QByteArray& imageData )
+QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageData )
 {
 	QNetworkAccessManager manager;
 	QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( url ) ) );
@@ -291,14 +312,14 @@ QString CMainView::downloadImageFromURL( const QString &url, QByteArray& imageDa
 	connect( &oneTake, SIGNAL( timeout() ), &wait, SLOT( quit() ) );
 	wait.exec();
 
-	QRegularExpression filenameRegex(R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))");
-	auto filenameMatch = filenameRegex.match(reply->rawHeader("Content-Disposition"));
-	auto fileName = filenameMatch.captured("fileName").replace("UTF-8''", "").replace(R"(")","");
+	QRegularExpression filenameRegex( R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))" );
+	auto filenameMatch = filenameRegex.match( reply->rawHeader( "Content-Disposition" ) );
+	auto fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
 
-	QImageReader imageReader(reply);
+	QImageReader imageReader( reply );
 	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
 	{
-		QMessageBox::critical( nullptr, "Failed Download",( QString( "Failed retrieve image : " ) + url) );
+		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url ) );
 		return "";
 	}
 
@@ -327,7 +348,7 @@ void CMainView::populateWorkshopList()
 void CMainView::onDeletePressed()
 {
 	QMessageBox deleteWarningMessageBox( QMessageBox::Icon::Critical, "DELETING ITEM", "This action will delete this item permanently from the workshop!", QMessageBox::Ok | QMessageBox::Abort, this );
-	QCheckBox *deleteWarningMessageCheckBox = new QCheckBox( "I understand that this will delete this item from the workshop.", &deleteWarningMessageBox );
+	auto deleteWarningMessageCheckBox = new QCheckBox( "I understand that this will delete this item from the workshop.", &deleteWarningMessageBox );
 	deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( true );
 	connect( deleteWarningMessageCheckBox, &QCheckBox::stateChanged, this, [&]( int state )
 			 {
@@ -356,9 +377,9 @@ void CMainView::onDeletePressed()
 
 void CMainView::onDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
 {
-	if ( bFailure )
+	if ( bFailure || pItem->m_eResult != 1 )
 	{
-		QMessageBox::critical( nullptr, "Fatal Error", "Failed to delete item." );
+		QMessageBox::critical( this, "Fatal Error", "Failed to delete item, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
 		return;
 	}
 
