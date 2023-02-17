@@ -75,7 +75,7 @@ jobs:
 
       - name: Configure CMake
         env:
-          CMAKE_PREFIX_PATH: ${{github.workspace}}\libs\Qt\Qt\6.4.1\msvc2019_64\
+          CMAKE_PREFIX_PATH: ${{github.workspace}}\libs\Qt\Qt\6.4.1\msvc2019_64\lib\cmake\Qt6'
         run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR=${{github.workspace}}\libs\Qt\Qt\6.4.1\msvc2019_64
 
       - name: Build
