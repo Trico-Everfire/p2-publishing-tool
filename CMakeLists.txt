@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_PREFIX_PATH "/home/trico/Qt/6.4.1/gcc_64/lib/cmake/")
-
 project(p2_map_uploader CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -23,7 +21,7 @@ if (WIN32)
     # On Windows, the install dir must be specified, as it's not standardized
     if (DEFINED QT_BASEDIR)
         # Add it to the prefix path so find_package can find it
-        list(APPEND CMAKE_PREFIX_PATH ${QT_BASEDIR}/lib/cmake)
+        set(CMAKE_PREFIX_PATH ${QT_BASEDIR}/lib/cmake)
         set(Qt6_DIR ${QT_BASEDIR}/lib/cmake)
 
         set(QT_INCLUDE ${QT_BASEDIR}/include)
