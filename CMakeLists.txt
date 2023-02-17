@@ -23,7 +23,7 @@ if (WIN32)
     # On Windows, the install dir must be specified, as it's not standardized
     if (DEFINED QT_BASEDIR)
         # Add it to the prefix path so find_package can find it
-        list(APPEND CMAKE_PREFIX_PATH ${QT_BASEDIR})
+        list(APPEND CMAKE_PREFIX_PATH ${QT_BASEDIR}/lib/cmake)
         set(QT_INCLUDE ${QT_BASEDIR}/include)
         # CMake has an odd policy that links a special link lib for Qt on newer versions of CMake. Enable it so we don't get spammed, and I get to write less
         cmake_policy(SET CMP0020 NEW)
