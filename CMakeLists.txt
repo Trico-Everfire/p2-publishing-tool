@@ -95,7 +95,7 @@ if (WIN32)
     configure_file("${STEAM_DIR}/openssl/libssl-1_1-x64.dll" "${CMAKE_BINARY_DIR}/libssl-1_1-x64.dll" COPYONLY)
     configure_file("${QT_BASEDIR}/plugins/platforms/qwindows.dll"         "${CMAKE_BINARY_DIR}/platforms/qwindows.dll"         COPYONLY)
     configure_file("${QT_BASEDIR}/plugins/platforms/qminimal.dll"         "${CMAKE_BINARY_DIR}/platforms/qminimal.dll"         COPYONLY)
-    configure_file("${QT_BASEDIR}/plugins/tls/qschannelbackend.dll"         "${CMAKE_BINARY_DIR}/lts/qschannelbackend.dll"         COPYONLY)
+    configure_file("${QT_BASEDIR}/plugins/tls/qschannelbackend.dll"         "${CMAKE_BINARY_DIR}/tls/qschannelbackend.dll"         COPYONLY)
     configure_file("${STEAM_DIR}/redistributable_bin/win64/steam_api64.dll" "${CMAKE_BINARY_DIR}/steam_api64.dll" COPYONLY)
 endif ()
 
