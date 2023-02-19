@@ -90,6 +90,7 @@ jobs:
             ${{github.workspace}}\build\*.dll
             ${{github.workspace}}\build\resources\
             ${{github.workspace}}\build\platforms\*.dll
+            ${{github.workspace}}\build\tls\*.dll
             ${{github.workspace}}\build\Credits.txt
             ${{github.workspace}}/libs/Steam-Workshop-API/sdk/openssl/*.dll
             
