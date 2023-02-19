@@ -314,9 +314,10 @@ QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageDa
 
 	QImageReader imageReader( reply );
 	qInfo() << reply->error();
+	qInfo() << imageReader.error();
 	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
 	{
-		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url + "\nError code: " + QString::number(reply->error()) ) );
+		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url + "\nNetwork error code: " + QString::number(reply->error()) + "\nImage reader error code: " + QString::number(imageReader.error()) ) );
 		return "";
 	}
 
