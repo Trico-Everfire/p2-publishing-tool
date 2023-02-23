@@ -151,12 +151,15 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 		QByteArray imageData {};
 		auto fileName = this->downloadImageFromURL( QString( previewURL ), imageData );
 
+		if(fileName.isEmpty())
+			continue;
+
 		auto fileDirectory = QDir::tempPath() + "/" + QString::number( pDetails.m_nPublishedFileId );
 
 		if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
 		{
 			QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
-			return;
+			continue;
 		}
 
 		auto filePath = fileDirectory + "/" + fileName;
@@ -234,6 +237,9 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 			QByteArray imageData {};
 
 			auto fileName = this->downloadImageFromURL( pchUrl, imageData );
+
+			if(fileName.isEmpty())
+				return AdditionalUGCDetails {};
 
 			auto fileDirectory = QDir::tempPath() + "/" + QString::number( fileID );
 
@@ -313,8 +319,6 @@ QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageDa
 	auto fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
 
 	QImageReader imageReader( reply );
-	qInfo() << reply->error();
-	qInfo() << imageReader.error();
 	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
 	{
 		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url + "\nNetwork error code: " + QString::number(reply->error()) + "\nImage reader error code: " + QString::number(imageReader.error()) ) );

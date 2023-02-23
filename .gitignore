@@ -5,6 +5,7 @@ build
 
 # Libs
 libs/Steam-API/
+libs/Steam-API
 !libs/.gitkeep
 # CMake with Visual Studio
 .vs/
