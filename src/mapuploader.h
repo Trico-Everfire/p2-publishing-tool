@@ -54,7 +54,7 @@ namespace ui
 	class CMapUploader : public QDialog
 	{
 	public:
-		static constexpr int MAX_IMAGE_SIZE = 1048576;
+		static constexpr int MAX_IMAGE_SIZE = 1024 * 1024; // 1mb
 
 		// We need to keep the strings alive long enough for
 		// m_CallOldApiResultSubmitItemUpdate to process them.
