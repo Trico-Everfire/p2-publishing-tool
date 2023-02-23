@@ -328,6 +328,9 @@ bool CMainView::downloadImageFromURL( const QString &url, QString &fileName, QBy
 	auto filenameMatch = filenameRegex.match( reply->rawHeader( "Content-Disposition" ) );
 	fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
 
+	qInfo() << fileName;
+	qInfo() << reply->readAll();
+	
 	QImageReader imageReader( reply, QFileInfo(fileName).completeSuffix().toUtf8() );
 	imageReader.setAutoDetectImageFormat(false);
 
