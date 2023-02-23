@@ -324,7 +324,12 @@ bool CMainView::downloadImageFromURL( const QString &url, QString &fileName, QBy
 	connect( &oneTake, SIGNAL( timeout() ), &wait, SLOT( quit() ) );
 	wait.exec();
 
-	QImageReader imageReader( reply );
+	QRegularExpression filenameRegex( R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))" );
+	auto filenameMatch = filenameRegex.match( reply->rawHeader( "Content-Disposition" ) );
+	fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
+
+	QImageReader imageReader( reply, QFileInfo(fileName).completeSuffix().toUtf8() );
+	imageReader.setAutoDetectImageFormat(false);
 
 	if ( reply->error() != QNetworkReply::NetworkError::NoError || imageReader.error() != QImageReader::ImageReaderError::UnknownError || !imageReader.canRead() )
 	{
@@ -334,10 +339,6 @@ bool CMainView::downloadImageFromURL( const QString &url, QString &fileName, QBy
 		fileName = ":/resource/InvalidImage.png";
 		return false;
 	}
-
-	QRegularExpression filenameRegex( R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))" );
-	auto filenameMatch = filenameRegex.match( reply->rawHeader( "Content-Disposition" ) );
-	fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
 
 	imageData = reply->readAll();
 
