@@ -40,9 +40,6 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-option(USE_STEAM "Uses steam" OFF)
-
-
 # Main Application
 set(SRC
         src/main.cpp

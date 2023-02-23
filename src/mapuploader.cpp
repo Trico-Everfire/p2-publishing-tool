@@ -465,7 +465,7 @@ void CMapUploader::updateWorkshopItem( PublishedFileId_t publishedFileId )
 
 	auto charTagVector = std::vector<const char *> {};
 
-	steamTagListPreserver m_pSteamTagList {};
+	SteamTagListPreserver m_pSteamTagList {};
 
 	for ( int i = 0; i < m_pAdvancedOptions->m_pTagsListWidget->count(); i++ )
 	{

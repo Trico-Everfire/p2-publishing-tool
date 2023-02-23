@@ -58,7 +58,7 @@ namespace ui
 
 		// We need to keep the strings alive long enough for
 		// m_CallOldApiResultSubmitItemUpdate to process them.
-		struct steamTagListPreserver
+		struct SteamTagListPreserver
 		{
 			SteamParamStringArray_t m_SteamTagList {};
 			std::vector<std::shared_ptr<char[]>> m_SharedCharArrayPointerTagList {};

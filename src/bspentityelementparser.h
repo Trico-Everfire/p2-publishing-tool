@@ -8,7 +8,7 @@ class CElementList
 {
 private:
 	inline static bool initialised = false;
-	inline static KeyValueRoot *elementList;
+	inline static std::unique_ptr<KeyValueRoot> elementList;
 	inline static const QString defaultElementList = "\"entities\" {\n"
 													 "    \"logic_relay\" {\n"
 													 "        \"disable_pti_audio\" \"1\"\n"
