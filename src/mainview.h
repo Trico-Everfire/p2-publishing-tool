@@ -49,7 +49,7 @@ namespace ui
 		void onDeletePressed();
 		void onDeleteItem( DeleteItemResult_t *pItem, bool bFailure );
 		CMainView::AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int count, int itemIndex, PublishedFileId_t fileID );
-		QString downloadImageFromURL( const QString &url, QByteArray& imageData );
+		bool downloadImageFromURL( const QString &url, QString &fileName, QByteArray &imageData );
 		static bool isFileWritable( const QString& fullPath );
 	};
 

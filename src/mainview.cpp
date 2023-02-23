@@ -149,17 +149,23 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 		}
 
 		QByteArray imageData {};
-		auto fileName = this->downloadImageFromURL( QString( previewURL ), imageData );
+		QString fileName {};
+		auto success = this->downloadImageFromURL( QString( previewURL ), fileName, imageData );
+
+		QString filePath;
+
+		if(!success)
+			continue;
 
 		auto fileDirectory = QDir::tempPath() + "/" + QString::number( pDetails.m_nPublishedFileId );
 
 		if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
 		{
 			QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
-			return;
+			continue;
 		}
 
-		auto filePath = fileDirectory + "/" + fileName;
+		filePath = fileDirectory + "/" + fileName;
 
 		if ( !CMainView::isFileWritable( filePath ) )
 		{
@@ -233,7 +239,18 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 		{
 			QByteArray imageData {};
 
-			auto fileName = this->downloadImageFromURL( pchUrl, imageData );
+			QString fileName;
+
+			auto success = this->downloadImageFromURL( pchUrl, fileName, imageData );
+
+			if(!success)
+			{
+				auto fileInfoList = QStringList {};
+				fileInfoList.append( pchFileName );
+				fileInfoList.append( fileName );
+				additionalDetails.imagePaths.append( fileInfoList );
+				break;
+			}
 
 			auto fileDirectory = QDir::tempPath() + "/" + QString::number( fileID );
 
@@ -294,38 +311,40 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 	return additionalDetails;
 }
 
-QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageData )
+bool CMainView::downloadImageFromURL( const QString &url, QString &fileName, QByteArray &imageData )
 {
 	QNetworkAccessManager manager;
 	QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( url ) ) );
 
 	QEventLoop wait;
 	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &wait, SLOT( quit() ) );
-	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &manager, SLOT( deleteLater() ) );
 
 	QTimer oneTake;
 	oneTake.start( 10000 );
 	connect( &oneTake, SIGNAL( timeout() ), &wait, SLOT( quit() ) );
 	wait.exec();
 
-	QRegularExpression filenameRegex( R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))" );
-	auto filenameMatch = filenameRegex.match( reply->rawHeader( "Content-Disposition" ) );
-	auto fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
-
 	QImageReader imageReader( reply );
-	qInfo() << reply->error();
-	qInfo() << imageReader.error();
-	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
+
+	if ( reply->error() != QNetworkReply::NetworkError::NoError || imageReader.error() != QImageReader::ImageReaderError::UnknownError || !imageReader.canRead() )
 	{
 		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url + "\nNetwork error code: " + QString::number(reply->error()) + "\nImage reader error code: " + QString::number(imageReader.error()) ) );
-		return "";
+		reply->deleteLater();
+		manager.deleteLater();
+		fileName = ":/resource/InvalidImage.png";
+		return false;
 	}
+
+	QRegularExpression filenameRegex( R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))" );
+	auto filenameMatch = filenameRegex.match( reply->rawHeader( "Content-Disposition" ) );
+	fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
 
 	imageData = reply->readAll();
 
 	reply->deleteLater();
+	manager.deleteLater();
 
-	return fileName;
+	return true;
 }
 
 void CMainView::populateWorkshopList()
