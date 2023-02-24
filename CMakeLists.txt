@@ -53,12 +53,8 @@ set(SRC
         src/bspfilestructure.h)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libs/SpeedyKeyV")
-#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libs/SAPP")
-#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libs/libz-ng-minizip-ng")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/SpeedyKeyV")
-#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/SAPP")
-#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libs/libz-ng-minizip-ng")
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 
 add_executable(${PROJECT_NAME} ${SRC} res/resource.qrc)
 
@@ -99,6 +95,17 @@ if (WIN32)
 endif ()
 
 if (UNIX)
+
+
+    configure_file("${QT_BASEDIR}/lib/libQt6Core.so.6.4.1" "${CMAKE_BINARY_DIR}/libQt6Core.so.6" COPYONLY)
+    configure_file("${QT_BASEDIR}/lib/libQt6Gui.so.6.4.1" "${CMAKE_BINARY_DIR}/libQt6Gui.so.6" COPYONLY)
+    configure_file("${QT_BASEDIR}/lib/libQt6Widgets.so.6.4.1" "${CMAKE_BINARY_DIR}/libQt6Widgets.so.6" COPYONLY)
+    configure_file("${QT_BASEDIR}/lib/libQt6Network.so.6.4.1" "${CMAKE_BINARY_DIR}/libQt6Network.so.6" COPYONLY)
+    configure_file("${QT_BASEDIR}/lib/libicui18n.so.56" "${CMAKE_BINARY_DIR}/libicui18n.so.56" COPYONLY)
+    configure_file("${QT_BASEDIR}/lib/libicuuc.so.56" "${CMAKE_BINARY_DIR}/libicuuc.so.56" COPYONLY)
+    configure_file("${QT_BASEDIR}/lib/libicudata.so.56" "${CMAKE_BINARY_DIR}/libicudata.so.56" COPYONLY)
+    configure_file("${QT_BASEDIR}/plugins/imageformats/libqjpeg.so" "${CMAKE_BINARY_DIR}/libqjpeg.so")
+    configure_file("${QT_BASEDIR}/plugins/platforms/libqminimal.so" "${CMAKE_BINARY_DIR}/platforms/libqminimal.so" COPYONLY)
     configure_file("${STEAM_DIR}/redistributable_bin/linux64/libsteam_api.so" "${CMAKE_BINARY_DIR}/libsteam_api.so" COPYONLY)
 endif ()
 

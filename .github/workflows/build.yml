@@ -19,7 +19,6 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          cached: 'true'
           version: 6.4.1
           host: linux
           target: desktop
