@@ -33,8 +33,8 @@ namespace ui
 
 	private:
 		QTimer m_CallbackTimer;
-	public:
 
+	public:
 		CMainView( QWidget *pParent = nullptr );
 		static constexpr AppId_t m_GameID = 620;
 		void onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
@@ -49,8 +49,8 @@ namespace ui
 		void onDeletePressed();
 		void onDeleteItem( DeleteItemResult_t *pItem, bool bFailure );
 		CMainView::AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int count, int itemIndex, PublishedFileId_t fileID );
-		QString downloadImageFromURL( const QString &url, QByteArray& imageData );
-		static bool isFileWritable( const QString& fullPath );
+		QString downloadImageFromURL( const QString &url, QByteArray &imageData );
+		static bool isFileWritable( const QString &fullPath );
 	};
 
 } // namespace ui

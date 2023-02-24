@@ -197,6 +197,9 @@ void CMapUploader::onBrowseThumbnailClicked()
 {
 	QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
 
+	if ( filePath.isEmpty() )
+		return;
+
 	SteamImageProcessError processError;
 	auto thumbnailScaledFilepath = processImageForSteamUpload( filePath, processError, true, 1914, 1078, MAX_IMAGE_SIZE );
 
@@ -226,9 +229,9 @@ QString CMapUploader::processImageForSteamUpload( const QString &filePath, Steam
 
 	auto steamUploadImage = QImage( filePath );
 
-	auto steamUploadImageFileInfo = QFileInfo(filePath);
+	auto steamUploadImageFileInfo = QFileInfo( filePath );
 
-	if(constraints)
+	if ( constraints )
 	{
 		steamUploadImage = steamUploadImage.scaled( width, height, Qt::IgnoreAspectRatio );
 
@@ -237,26 +240,26 @@ QString CMapUploader::processImageForSteamUpload( const QString &filePath, Steam
 	}
 
 	QByteArray imageBufferArray {};
-	QBuffer imageBuffer(&imageBufferArray );
-	imageBuffer.open(QIODevice::WriteOnly);
+	QBuffer imageBuffer( &imageBufferArray );
+	imageBuffer.open( QIODevice::WriteOnly );
 
-	if( steamUploadImageFileInfo.size() > MAX_IMAGE_SIZE)
+	if ( steamUploadImageFileInfo.size() > MAX_IMAGE_SIZE )
 	{
-		steamUploadImage.save(&imageBuffer, "JPG");
-		for(int i = 95; imageBufferArray.size() > MAX_IMAGE_SIZE && i > 0; i-=5)
+		steamUploadImage.save( &imageBuffer, "JPG" );
+		for ( int i = 95; imageBufferArray.size() > MAX_IMAGE_SIZE && i > 0; i -= 5 )
 		{
 			imageBufferArray.clear();
-			steamUploadImage.save(&imageBuffer, "JPG", i);
+			steamUploadImage.save( &imageBuffer, "JPG", i );
 		}
 
-		if( imageBufferArray.size() > MAX_IMAGE_SIZE)
+		if ( imageBufferArray.size() > MAX_IMAGE_SIZE )
 		{
 			fileError = SteamImageProcessError::FILE_TOO_LARGE;
 			imageBuffer.close();
 			return "";
 		}
 
-		steamUploadImage = QImage::fromData( imageBufferArray, "JPG");
+		steamUploadImage = QImage::fromData( imageBufferArray, "JPG" );
 	}
 
 	imageBuffer.close();
@@ -286,7 +289,7 @@ QString CMapUploader::processImageForSteamUpload( const QString &filePath, Steam
 		return thumbnailScaledFilepath;
 	}
 
-	if(!steamUploadImage.save( thumbnailScaledFilepath ))
+	if ( !steamUploadImage.save( thumbnailScaledFilepath ) )
 	{
 		fileError = SteamImageProcessError::FILE_SAVE_ERROR;
 		return thumbnailScaledFilepath;
@@ -383,7 +386,7 @@ bool CMapUploader::canUploadProceed( QString &errorString ) const
 	else
 		errorString += "✓ | Meets PTI requirements\n";
 
-	if(!m_pSteamToSAgreement->isChecked())
+	if ( !m_pSteamToSAgreement->isChecked() )
 	{
 		errorString += "x | Agreed to Workshop ToS\n";
 		canProceed = false;
@@ -439,7 +442,6 @@ void CMapUploader::updateBSPWithOldWorkshopResult( RemoteStorageUpdatePublishedF
 {
 	if ( bFailure || pItem->m_eResult != 1 )
 	{
-
 		QMessageBox::critical( this, "Fatal Error", "Something went wrong with the uploading of the BSP, make sure the BSP exists and is valid, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
 		if ( auto mainWindowParent = dynamic_cast<CMainView *>( this->parent() ) )
 		{
@@ -753,6 +755,9 @@ CAdvancedOptionsDialog::CAdvancedOptionsDialog( QWidget *pParent ) :
 				 if ( item->type() == ADD_IMAGE )
 				 {
 					 auto imageFilePath = QFileDialog::getOpenFileName( this, "Image File", "./", "(Images) *.png *.jpg *.jpeg", nullptr, FILE_PICKER_OPTS );
+
+					 if ( imageFilePath.isEmpty() )
+						 return;
 
 					 CMapUploader::SteamImageProcessError processError;
 					 auto thumbnailScaledFilepath = CMapUploader::processImageForSteamUpload( imageFilePath, processError, false, 0, 0, CMapUploader::MAX_IMAGE_SIZE );

@@ -151,7 +151,7 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 		QByteArray imageData {};
 		auto fileName = this->downloadImageFromURL( QString( previewURL ), imageData );
 
-		if(fileName.isEmpty())
+		if ( fileName.isEmpty() )
 			continue;
 
 		auto fileDirectory = QDir::tempPath() + "/" + QString::number( pDetails.m_nPublishedFileId );
@@ -238,7 +238,7 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 
 			auto fileName = this->downloadImageFromURL( pchUrl, imageData );
 
-			if(fileName.isEmpty())
+			if ( fileName.isEmpty() )
 				return AdditionalUGCDetails {};
 
 			auto fileDirectory = QDir::tempPath() + "/" + QString::number( fileID );
@@ -277,7 +277,7 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 			auto additionalImageFile = QFile( filePath );
 			additionalImageFile.open( QFile::WriteOnly );
 
-			if(!additionalImageFile.write( imageData ))
+			if ( !additionalImageFile.write( imageData ) )
 			{
 				QMessageBox::critical( this, "Fatal Error", "Unable to download additional images. (Permission Denied)\n" + filePath );
 				return AdditionalUGCDetails {};
@@ -321,7 +321,7 @@ QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageDa
 	QImageReader imageReader( reply );
 	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
 	{
-		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url + "\nNetwork error code: " + QString::number(reply->error()) + "\nImage reader error code: " + QString::number(imageReader.error()) ) );
+		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url + "\nNetwork error code: " + QString::number( reply->error() ) + "\nImage reader error code: " + QString::number( imageReader.error() ) ) );
 		return "";
 	}
 

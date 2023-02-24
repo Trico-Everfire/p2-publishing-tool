@@ -14,11 +14,11 @@ CElementList::ListInitResponse CElementList::initialiseElementList()
 
 	std::unique_ptr<KeyValueRoot> mainRoot = std::make_unique<KeyValueRoot>();
 
-	if ( !CMainView::isFileWritable(QDir::currentPath() + "/elements.kv") )
+	if ( !CMainView::isFileWritable( QDir::currentPath() + "/elements.kv" ) )
 	{
 		mainRoot->Parse( defaultElementList.toStdString().c_str() );
 
-		elementList = std::move(mainRoot);
+		elementList = std::move( mainRoot );
 		initialised = true;
 
 		return ListInitResponse::FILEINVALID;
@@ -35,7 +35,7 @@ CElementList::ListInitResponse CElementList::initialiseElementList()
 
 		mainRoot->Parse( defaultElementList.toStdString().c_str() );
 
-		elementList = std::move(mainRoot);
+		elementList = std::move( mainRoot );
 		initialised = true;
 
 		return ListInitResponse::FILENOTFOUND;
@@ -50,7 +50,7 @@ CElementList::ListInitResponse CElementList::initialiseElementList()
 
 		keyvalueFile.close();
 
-		elementList = std::move(mainRoot);
+		elementList = std::move( mainRoot );
 		initialised = true;
 
 		return ListInitResponse::FILEINVALID;
@@ -58,7 +58,7 @@ CElementList::ListInitResponse CElementList::initialiseElementList()
 
 	keyvalueFile.close();
 
-	elementList = std::move(mainRoot);
+	elementList = std::move( mainRoot );
 	initialised = true;
 
 	return ListInitResponse::FILEINITIALISED;

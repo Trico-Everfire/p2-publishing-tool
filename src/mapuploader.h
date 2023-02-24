@@ -17,7 +17,6 @@ namespace ui
 	class CAdvancedOptionsDialog : public QDialog
 	{
 	public:
-
 		enum ListItemTypes
 		{
 			NO_TYPE = 0,
@@ -79,7 +78,6 @@ namespace ui
 		bool m_MeetsPTIRequirements = false;
 		int m_EditPreviewCount = 0;
 		PublishedFileId_t m_PublishedFileId;
-
 
 	public:
 		QPushButton *m_pAdvancedOptionsButton;
