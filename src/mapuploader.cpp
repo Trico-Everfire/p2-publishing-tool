@@ -405,7 +405,10 @@ bool CMapUploader::updateBSPWithOldWorkshop( PublishedFileId_t publishedFileId )
 	auto fileName = ( QString( "mymaps/" ) + bspFile.fileName() );
 
 	if ( !bspFile.exists() )
+	{
+		qInfo() << "Failurepoint File does not exist!";
 		return false;
+	}
 
 	bspFile.open( QFile::ReadOnly );
 
@@ -417,19 +420,31 @@ bool CMapUploader::updateBSPWithOldWorkshop( PublishedFileId_t publishedFileId )
 		if ( j < MAX_BSP_UPLOAD_CHUNK )
 		{
 			if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), j ) )
+			{
+				qInfo() << "Failure point Midway, Index: " + QString::number(i);
 				return false;
+			}
 			continue;
 		}
 		if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), MAX_BSP_UPLOAD_CHUNK ) )
+		{
+			qInfo() << "Failure point end, Index: " + QString::number(i);
 			return false;
+		}
 	}
 
 	if ( !SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle ) )
+	{
+		qInfo() << "Failurepoint close stream: ";
 		return false;
+	}
 
 	PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( publishedFileId );
 	if ( !SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, fileName.toStdString().c_str() ) )
+	{
+		qInfo() << "Failurepoint upload stream.: ";
 		return false;
+	}
 
 	SteamAPICall_t publishFileUpdateCall = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
 	m_CallOldApiResultSubmitItemUpdate.Set( publishFileUpdateCall, this, &CMapUploader::updateBSPWithOldWorkshopResult );
