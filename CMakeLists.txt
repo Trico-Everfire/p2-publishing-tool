@@ -79,6 +79,7 @@ target_link_directories(${PROJECT_NAME} PUBLIC ${LINK_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBS})
 target_link_directories(${PROJECT_NAME} PUBLIC ${LINK_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE ${INC_DIRS})
 
 if (WIN32)
