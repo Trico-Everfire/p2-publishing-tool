@@ -3,10 +3,12 @@
 #include "steam_api.h"
 
 #include <QApplication>
-#include <QFile>
+#include <QCommonStyle>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QStyleFactory>
 
 using namespace ui;
 
@@ -24,10 +26,29 @@ int main( int argc, char **argv )
 
 	auto app = new QApplication( argc, argv );
 
-	QFile file( ":/resource/style.qss" );
-	file.open( QFile::ReadOnly );
-	QString styleSheet = QLatin1String( file.readAll() );
-	qApp->setStyleSheet( styleSheet );
+	QCommonStyle* style = (QCommonStyle*) QStyleFactory::create("fusion");
+	qApp->setStyle(style);
+
+	QPalette palette = QPalette();
+	palette.setColor(QPalette::Window, QColor(49,54,59));
+	palette.setColor(QPalette::WindowText, Qt::white);
+	palette.setColor(QPalette::Base, QColor(27,30,32));
+	palette.setColor(QPalette::AlternateBase, QColor(49,54,59));
+	palette.setColor(QPalette::ToolTipBase, Qt::black);
+	palette.setColor(QPalette::ToolTipText, Qt::white);
+	palette.setColor(QPalette::Text, Qt::white);
+	palette.setColor(QPalette::Button, QColor(49,54,59));
+	palette.setColor(QPalette::ButtonText, Qt::white);;
+	palette.setColor(QPalette::BrightText, Qt::red);
+	palette.setColor(QPalette::Link, QColor(42, 130, 218));
+	palette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+	palette.setColor(QPalette::HighlightedText, Qt::black);
+	palette.setColor(QPalette::Active, QPalette::Button, QColor(49,54,59));
+	palette.setColor(QPalette::Disabled, QPalette::ButtonText, Qt::darkGray);
+	palette.setColor(QPalette::Disabled, QPalette::WindowText, Qt::darkGray);
+	palette.setColor(QPalette::Disabled, QPalette::Text, Qt::darkGray);
+	palette.setColor(QPalette::Disabled, QPalette::Light, QColor(49,54,59));
+	qApp->setPalette(palette);
 
 	if ( !SteamAPI_Init() )
 	{
