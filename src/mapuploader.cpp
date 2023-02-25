@@ -555,6 +555,11 @@ void CMapUploader::updateWorkshopItemResult( SubmitItemUpdateResult_t *pItem, bo
 		return;
 	}
 
+	if ( auto mainWindowParent = dynamic_cast<CMainView *>( this->parent() ) )
+	{
+		mainWindowParent->populateWorkshopList();
+	}
+
 	this->close();
 }
 
