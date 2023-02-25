@@ -402,7 +402,7 @@ bool CMapUploader::updateBSPWithOldWorkshop( PublishedFileId_t publishedFileId )
 	constexpr const uint32 MAX_BSP_UPLOAD_CHUNK = 1024 * 1024 * 100; // 100mb
 	QFile bspFile( m_pBSPFileEntry->text() );
 
-	auto fileName = ( QString( "mymaps/" ) + bspFile.fileName() );
+	auto fileName = ( QString( "mymaps\\" ) + bspFile.fileName() );
 
 	if ( !bspFile.exists() )
 	{
