@@ -45,7 +45,7 @@ namespace ui
 		void addImageWidgetItem( const QString &name, const QString &path, bool removable = true );
 		void addVideoWidgetItem( const QString &name, bool removable = true );
 		void addTagWidgetItem( const QString &name, bool removable = true );
-		void populateDefaultTagListWidget() const;
+		void populateDefaultTagListWidget();
 		void simpleInputDialog( QString &resultString );
 		QListWidgetItem *createBasicListWidgetItem( const QString &labelText, QWidget *baseWidget, QListWidget *itemList, ListItemTypes type, bool removable = true );
 	};
@@ -69,6 +69,16 @@ namespace ui
 			FILE_TOO_LARGE,
 			FILE_DIRECTORY_CREATE_ERROR,
 			FILE_SAVE_ERROR,
+		};
+
+		enum class RemoteStorageUploadError
+		{
+			NO_ERROR = 0,
+			FILE_DOESNT_EXIST,
+			FILE_INACCESSIBLE,
+			QUOTA_EXCEEDED,
+			STREAM_CREATE_ERROR,
+			UPLOAD_ERROR,
 		};
 
 	private:
@@ -106,8 +116,8 @@ namespace ui
 		static QString processImageForSteamUpload( const QString &filePath, SteamImageProcessError &fileError, bool constraints, int width, int height, int size );
 
 	private:
-		CCallResult<CMapUploader, CreateItemResult_t> m_CallResultCreateItem;
-		void createWorkshopItemResult( CreateItemResult_t *pItem, bool bFailure );
+		CCallResult<CMapUploader, RemoteStoragePublishFileResult_t> m_CallResultPublishItem;
+		void publishWorkshopItemResult( RemoteStoragePublishFileResult_t *pItem, bool bFailure );
 
 		bool retrieveBSP( const QString &path, QStringList &tagList, bool &ptiRequirements );
 		static bool parseBSPEntitiesToStringList( const QString &rawEntityLump, QStringList &entityList );
@@ -115,6 +125,6 @@ namespace ui
 		bool canUploadProceed( QString &errorString ) const;
 		void onBrowseBSPClicked();
 		void onBrowseThumbnailClicked();
-		bool updateBSPWithOldWorkshop( PublishedFileId_t publishedFileId );
+		CMapUploader::RemoteStorageUploadError uploadToSteamLocalStorage( const QString &localPath, QString &storageFileName );
 	};
 } // namespace ui

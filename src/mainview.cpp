@@ -307,7 +307,6 @@ QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageDa
 
 	QEventLoop wait;
 	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &wait, SLOT( quit() ) );
-	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &manager, SLOT( deleteLater() ) );
 
 	QTimer oneTake;
 	oneTake.start( 10000 );

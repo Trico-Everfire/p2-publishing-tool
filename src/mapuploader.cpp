@@ -141,13 +141,54 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 				 else
 				 {
 					 if ( m_EditedBSP )
-						 if ( !this->updateBSPWithOldWorkshop( m_PublishedFileId ) )
+					 {
+						 QString bspFile {};
+
+						 auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileEntry->text(), bspFile );
+
+						 switch ( bspError )
+						 {
+							 case RemoteStorageUploadError::NO_ERROR:
+								 break;
+							 case RemoteStorageUploadError::FILE_DOESNT_EXIST:
+								 QMessageBox::critical( this, "Missing BSP!", "The BSP file could not be found. make sure the BSP exists." );
+								 this->setEnabled( true );
+								 return;
+							 case RemoteStorageUploadError::FILE_INACCESSIBLE:
+								 QMessageBox::critical( this, "Read Error!", "Unable to access BSP contents. (permission denied.)" );
+								 this->setEnabled( true );
+								 return;
+							 case RemoteStorageUploadError::QUOTA_EXCEEDED:
+								 QMessageBox::critical( this, "Quota Exceeded!", "Your Steam Remote Storage Quota has been exceeded, could not upload BSP." );
+								 this->setEnabled( true );
+								 return;
+							 case RemoteStorageUploadError::STREAM_CREATE_ERROR:
+								 QMessageBox::critical( this, "Stream Create Error!", "Unable to create write stream to upload your BSP." );
+								 this->setEnabled( true );
+								 return;
+							 case RemoteStorageUploadError::UPLOAD_ERROR:
+								 QMessageBox::critical( this, "Stream Upload Error!", "Unable to upload your BSP to the remote storage servers." );
+								 this->setEnabled( true );
+								 return;
+						 }
+
+						 PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( m_PublishedFileId );
+
+						 if ( !SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, bspFile.toStdString().c_str() ) )
 						 {
 							 QMessageBox::critical( this, "Fatal Error", "Something went wrong with the uploading of the BSP, make sure the BSP exists and is valid." );
-							 this->setEnabled( true );
+							 return;
 						 }
-					 this->updateWorkshopItem( m_PublishedFileId );
+
+						 SteamAPICall_t publishFileUpdateCall = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
+						 m_CallOldApiResultSubmitItemUpdate.Set( publishFileUpdateCall, this, &CMapUploader::updateBSPWithOldWorkshopResult );
+
+					 }
+					 else
+					 	this->updateWorkshopItem( m_PublishedFileId );
+
 				 }
+
 			 } );
 	connect( pCloseButton, &QPushButton::clicked, this, [this]
 			 {
@@ -186,7 +227,7 @@ void CMapUploader::onBrowseBSPClicked()
 	m_pAdvancedOptions->populateDefaultTagListWidget();
 
 	foreach( auto tag, tagList )
-		m_pAdvancedOptions->addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Cooperative" ) );
+		m_pAdvancedOptions->addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Cooperative" || tag == "Custom Visuals" ) );
 
 	m_pAdvancedOptionsButton->setEnabled( true );
 	m_pBSPFileEntry->setText( filePath );
@@ -320,34 +361,56 @@ void CMapUploader::setEditItem( const CMainView::FullUGCDetails &itemDetails )
 
 void CMapUploader::createNewWorkshopItem()
 {
-	SteamAPICall_t hApiCreateItemHandle = SteamUGC()->CreateItem( CMainView::m_GameID, k_EWorkshopFileTypeCommunity );
-	m_CallResultCreateItem.Set( hApiCreateItemHandle, this, &CMapUploader::createWorkshopItemResult );
+	QString bspFile {};
+	auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileEntry->text(), bspFile );
+
+	switch ( bspError )
+	{
+		case RemoteStorageUploadError::NO_ERROR:
+			break;
+		case RemoteStorageUploadError::FILE_DOESNT_EXIST:
+			QMessageBox::critical( this, "Missing BSP!", "The BSP file could not be found. make sure the BSP exists." );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::FILE_INACCESSIBLE:
+			QMessageBox::critical( this, "Read Error!", "Unable to access BSP contents. (permission denied.)" );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::QUOTA_EXCEEDED:
+			QMessageBox::critical( this, "Quota Exceeded!", "Your Steam Remote Storage Quota has been exceeded, could not upload BSP." );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::STREAM_CREATE_ERROR:
+			QMessageBox::critical( this, "Stream Create Error!", "Unable to create write stream to upload your BSP." );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::UPLOAD_ERROR:
+			QMessageBox::critical( this, "Stream Upload Error!", "Unable to upload your BSP to the remote storage servers." );
+			this->setEnabled( true );
+			return;
+	}
+
+	auto PublishFileCall = SteamRemoteStorage()->PublishWorkshopFile( bspFile.toUtf8().constData(), "", CMainView::m_GameID, "", "", ERemoteStoragePublishedFileVisibility::k_ERemoteStoragePublishedFileVisibilityUnlisted, nullptr, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
+	m_CallResultPublishItem.Set(PublishFileCall, this, &CMapUploader::publishWorkshopItemResult);
+
 }
 
-void CMapUploader::createWorkshopItemResult( CreateItemResult_t *pItem, bool bFailure )
+void CMapUploader::publishWorkshopItemResult( RemoteStoragePublishFileResult_t *pItem, bool bFailure )
 {
+
 	if ( bFailure || pItem->m_eResult != 1 )
 	{
-		QString errMSG = "Your workshop item could not be created, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult";
-		QMessageBox::warning( this, "Item Creation Failure!", errMSG, QMessageBox::Ok );
+		QMessageBox::critical( this, "Fatal Error", "Something went wrong with the creation of this item., make sure the contents is valid, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
+		if ( auto mainWindowParent = dynamic_cast<CMainView *>( this->parent() ) )
+		{
+			SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( pItem->m_nPublishedFileId );
+			mainWindowParent->m_CallResultDeleteItem.Set( deleteItemCall, mainWindowParent, &CMainView::onDeleteItem );
+		}
+		this->setEnabled( true );
 		return;
 	}
 
-	if ( m_EditedBSP )
-	{
-		if ( !this->updateBSPWithOldWorkshop( pItem->m_nPublishedFileId ) )
-		{
-			QMessageBox::critical( this, "Fatal Error", "Something went wrong with the uploading of the BSP, make sure the BSP exists and is valid." );
-			if ( auto mainWindowParent = dynamic_cast<CMainView *>( this->parent() ) )
-			{
-				SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( pItem->m_nPublishedFileId );
-				mainWindowParent->m_CallResultDeleteItem.Set( deleteItemCall, mainWindowParent, &CMainView::onDeleteItem );
-			}
-			this->setEnabled( true );
-		}
-	}
-	else
-		this->updateWorkshopItem( pItem->m_nPublishedFileId );
+	this->updateWorkshopItem(pItem->m_nPublishedFileId);
 }
 
 bool CMapUploader::canUploadProceed( QString &errorString ) const
@@ -397,28 +460,41 @@ bool CMapUploader::canUploadProceed( QString &errorString ) const
 	return canProceed;
 }
 
-bool CMapUploader::updateBSPWithOldWorkshop( PublishedFileId_t publishedFileId )
+CMapUploader::RemoteStorageUploadError CMapUploader::uploadToSteamLocalStorage( const QString &localPath, QString &storageFileName )
 {
 	constexpr const uint32 MAX_BSP_UPLOAD_CHUNK = 1024 * 1024 * 100; // 100mb
 
-	QFileInfo bspFileInfo( m_pBSPFileEntry->text() );
+	QFileInfo bspFileInfo( localPath );
 
 	auto fileName = ( QString( "mymaps/" ) + bspFileInfo.fileName() );
 
 	if ( !bspFileInfo.exists() )
 	{
-		return false;
+		return CMapUploader::RemoteStorageUploadError::FILE_DOESNT_EXIST;
 	}
 
-	QFile bspFile( m_pBSPFileEntry->text() );
+	QFile bspFile( localPath );
 
-	bspFile.open( QFile::ReadOnly );
+	if ( !bspFile.open( QFile::ReadOnly ) )
+	{
+		return CMapUploader::RemoteStorageUploadError::FILE_INACCESSIBLE;
+	}
+
+	uint64 totalQuota;
+	uint64 availableQuota;
+
+	SteamRemoteStorage()->GetQuota( &totalQuota, &availableQuota );
+
+	if ( availableQuota + bspFile.size() > totalQuota )
+	{
+		return CMapUploader::RemoteStorageUploadError::QUOTA_EXCEEDED;
+	}
 
 	UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( fileName.toUtf8().constData() );
 
-	if(filewritestreamhandle == k_UGCHandleInvalid)
+	if ( filewritestreamhandle == k_UGCHandleInvalid )
 	{
-		return false;
+		return CMapUploader::RemoteStorageUploadError::STREAM_CREATE_ERROR;
 	}
 
 	QByteArray bspData = bspFile.readAll();
@@ -429,36 +505,27 @@ bool CMapUploader::updateBSPWithOldWorkshop( PublishedFileId_t publishedFileId )
 		{
 			if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), j ) )
 			{
-				SteamRemoteStorage()->FileWriteStreamCancel(filewritestreamhandle);
-				return false;
+				SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
+				return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
 			}
 			continue;
 		}
 		if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), MAX_BSP_UPLOAD_CHUNK ) )
 		{
-			SteamRemoteStorage()->FileWriteStreamCancel(filewritestreamhandle);
-			return false;
+			SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
+			return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
 		}
 	}
 
 	if ( !SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle ) )
 	{
-		SteamRemoteStorage()->FileWriteStreamCancel(filewritestreamhandle);
-		return false;
+		SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
+		return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
 	}
-
-	PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( publishedFileId );
-	if ( !SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, fileName.toStdString().c_str() ) )
-	{
-		SteamRemoteStorage()->FileWriteStreamCancel(filewritestreamhandle);
-		return false;
-	}
-
-	SteamAPICall_t publishFileUpdateCall = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
-	m_CallOldApiResultSubmitItemUpdate.Set( publishFileUpdateCall, this, &CMapUploader::updateBSPWithOldWorkshopResult );
 
 	bspFile.close();
-	return true;
+	storageFileName = fileName;
+	return CMapUploader::RemoteStorageUploadError::NO_ERROR;
 }
 
 void CMapUploader::updateBSPWithOldWorkshopResult( RemoteStorageUpdatePublishedFileResult_t *pItem, bool bFailure )
@@ -545,13 +612,6 @@ void CMapUploader::updateWorkshopItemResult( SubmitItemUpdateResult_t *pItem, bo
 		QString errMSG = "Your workshop item could not be created, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult";
 		QMessageBox::warning( this, "Item Creation Failure!", errMSG, QMessageBox::Ok );
 		this->setEnabled( true );
-
-		if ( !m_IsEditing )
-			if ( auto mainWindowParent = dynamic_cast<CMainView *>( this->parent() ) )
-			{
-				SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( pItem->m_nPublishedFileId );
-				mainWindowParent->m_CallResultDeleteItem.Set( deleteItemCall, mainWindowParent, &CMainView::onDeleteItem );
-			}
 		return;
 	}
 
@@ -854,10 +914,11 @@ void CAdvancedOptionsDialog::populateDefaultMediaListWidget()
 	m_pMediaListWidget->addItem( pAddImageItem );
 }
 
-void CAdvancedOptionsDialog::populateDefaultTagListWidget() const
+void CAdvancedOptionsDialog::populateDefaultTagListWidget()
 {
 	auto pAddTagItem = new QListWidgetItem( "+ Add Tag", nullptr, ADD_TAG );
 	m_pTagsListWidget->addItem( pAddTagItem );
+	this->addTagWidgetItem("Custom Visuals", false);
 }
 
 void CAdvancedOptionsDialog::simpleInputDialog( QString &resultString )
@@ -993,7 +1054,7 @@ void CAdvancedOptionsDialog::setEditItem( const CMainView::FullUGCDetails &itemD
 
 	auto tagList = QString( itemDetails.standardDetails.m_rgchTags ).split( "," );
 	foreach( auto tag, tagList )
-		addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Multiplayer" ) );
+		addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Multiplayer" || tag == "Custom Visuals" ) );
 
 	foreach( auto imageInfo, itemDetails.additionalDetails.imagePaths )
 		addImageWidgetItem( imageInfo[0], imageInfo[1] );
