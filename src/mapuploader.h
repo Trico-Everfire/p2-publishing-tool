@@ -87,6 +87,7 @@ namespace ui
 		bool m_EditedThumbnail = false;
 		bool m_MeetsPTIRequirements = false;
 		int m_EditPreviewCount = 0;
+		QString remoteFile;
 		PublishedFileId_t m_PublishedFileId;
 
 	public:

@@ -172,10 +172,16 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 								 return;
 						 }
 
+						 remoteFile = bspFile;
+
 						 PublishedFileUpdateHandle_t old_API_Handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest( m_PublishedFileId );
 
 						 if ( !SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, bspFile.toStdString().c_str() ) )
 						 {
+
+							 if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
+								 SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
+
 							 QMessageBox::critical( this, "Fatal Error", "Something went wrong with the uploading of the BSP, make sure the BSP exists and is valid." );
 							 return;
 						 }
@@ -390,6 +396,8 @@ void CMapUploader::createNewWorkshopItem()
 			return;
 	}
 
+	remoteFile = bspFile;
+
 	auto PublishFileCall = SteamRemoteStorage()->PublishWorkshopFile( bspFile.toUtf8().constData(), "", CMainView::m_GameID, "", "", ERemoteStoragePublishedFileVisibility::k_ERemoteStoragePublishedFileVisibilityUnlisted, nullptr, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
 	m_CallResultPublishItem.Set(PublishFileCall, this, &CMapUploader::publishWorkshopItemResult);
 
@@ -397,6 +405,9 @@ void CMapUploader::createNewWorkshopItem()
 
 void CMapUploader::publishWorkshopItemResult( RemoteStoragePublishFileResult_t *pItem, bool bFailure )
 {
+
+	if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
+		SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
 
 	if ( bFailure || pItem->m_eResult != 1 )
 	{
@@ -530,6 +541,10 @@ CMapUploader::RemoteStorageUploadError CMapUploader::uploadToSteamLocalStorage( 
 
 void CMapUploader::updateBSPWithOldWorkshopResult( RemoteStorageUpdatePublishedFileResult_t *pItem, bool bFailure )
 {
+
+	if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
+		SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
+
 	if ( bFailure || pItem->m_eResult != 1 )
 	{
 		QMessageBox::critical( this, "Fatal Error", "Something went wrong with the uploading of the BSP, make sure the BSP exists and is valid, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
