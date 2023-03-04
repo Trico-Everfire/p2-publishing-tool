@@ -485,7 +485,7 @@ CMapUploader::RemoteStorageUploadError CMapUploader::uploadToSteamLocalStorage( 
 
 	SteamRemoteStorage()->GetQuota( &totalQuota, &availableQuota );
 
-	if ( availableQuota + bspFile.size() > totalQuota )
+	if ( availableQuota - bspFile.size() < 0 )
 	{
 		return CMapUploader::RemoteStorageUploadError::QUOTA_EXCEEDED;
 	}
