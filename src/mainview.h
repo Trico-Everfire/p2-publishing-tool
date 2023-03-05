@@ -29,7 +29,7 @@ namespace ui
 
 	public:
 		static constexpr int MAX_URL_SIZE = 2048;
-		static constexpr AppId_t m_GameID = 620;
+		static constexpr AppId_t m_GameID = 440000;
 
 		std::map<int, FullUGCDetails> m_SteamUGCDetailsList;
 		QTreeWidget *m_pWorkshopItemTree;

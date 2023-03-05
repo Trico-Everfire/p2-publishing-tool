@@ -12,7 +12,7 @@
 
 using namespace ui;
 
-static const constexpr int APP_ID = 644;
+static const constexpr int APP_ID = 440000;
 
 void shutdown_steam()
 {
