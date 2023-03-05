@@ -75,10 +75,10 @@ CAdvancedOptionsDialog::CAdvancedOptionsDialog( QWidget *pParent ) :
 	m_pPTIInstanceCheckBox = new QCheckBox( "Allow upload without PTI Instance", this );
 	pPTIInstanceVisibilityLayout->addWidget( m_pPTIInstanceCheckBox, 0, 0, 1, 3, Qt::AlignLeft );
 
-	auto pVisbilityLayout = new QHBoxLayout();
+	auto pVisibilityLayout = new QHBoxLayout();
 
 	auto pVisibilityLabel = new QLabel( "Visibility:", this );
-	pVisbilityLayout->addWidget( pVisibilityLabel );
+	pVisibilityLayout->addWidget( pVisibilityLabel );
 
 	m_pVisibilityComboBox = new QComboBox( this );
 	m_pVisibilityComboBox->addItem( "public", k_ERemoteStoragePublishedFileVisibilityPublic );
@@ -86,9 +86,9 @@ CAdvancedOptionsDialog::CAdvancedOptionsDialog( QWidget *pParent ) :
 	m_pVisibilityComboBox->addItem( "friends", k_ERemoteStoragePublishedFileVisibilityFriendsOnly );
 	m_pVisibilityComboBox->addItem( "unlisted", k_ERemoteStoragePublishedFileVisibilityUnlisted );
 
-	pVisbilityLayout->addWidget( m_pVisibilityComboBox );
+	pVisibilityLayout->addWidget( m_pVisibilityComboBox );
 
-	pPTIInstanceVisibilityLayout->addLayout( pVisbilityLayout, 0, 4, Qt::AlignRight );
+	pPTIInstanceVisibilityLayout->addLayout( pVisibilityLayout, 0, 4, Qt::AlignRight );
 
 	pDialogLayout->addWidget( pPTIInstanceVisibilityGroupBox, 2, 0, 1, 4 );
 
@@ -162,7 +162,7 @@ void CAdvancedOptionsDialog::setEditItem( const CMainView::FullUGCDetails &itemD
 
 	auto tagList = QString( itemDetails.standardDetails.m_rgchTags ).split( "," );
 	foreach( auto tag, tagList )
-		addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Multiplayer" || tag == "Custom Visuals" ) );
+		addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Cooperative" || tag == "Custom Visuals" ) );
 
 	foreach( auto imageInfo, itemDetails.additionalDetails.imagePaths )
 		addImageWidgetItem( imageInfo[0], imageInfo[1] );
@@ -187,25 +187,25 @@ void CAdvancedOptionsDialog::setEditItem( const CMainView::FullUGCDetails &itemD
 	}
 }
 
-QListWidgetItem *CAdvancedOptionsDialog::createBasicListWidgetItem( const QString &labelText, QWidget *baseWidget, QListWidget *itemList, ListItemTypes type, bool removable )
+QListWidgetItem *CAdvancedOptionsDialog::createBasicListWidgetItem( const QString &labelText, QWidget *pBaseWidget, QListWidget *pListWidget, ListItemTypes listItemType, bool removable )
 {
-	auto pBasicListItem = new QListWidgetItem( nullptr, type );
+	auto pBasicListItem = new QListWidgetItem( nullptr, listItemType );
 
-	auto pListItemLayout = new QHBoxLayout( baseWidget );
+	auto pListItemLayout = new QHBoxLayout( pBaseWidget );
 
 	auto pListItemText = new QLabel( labelText, this );
 	pListItemLayout->addWidget( pListItemText, Qt::AlignLeft );
 
 	if ( removable )
 	{
-		auto pRemoveItemButton = new QPushButton( "X", baseWidget );
+		auto pRemoveItemButton = new QPushButton( "X", pBaseWidget );
 		pRemoveItemButton->setFixedSize( 16, 16 );
 
-		connect( pRemoveItemButton, &QPushButton::clicked, baseWidget, [pBasicListItem, itemList]
+		connect( pRemoveItemButton, &QPushButton::clicked, pBaseWidget, [pBasicListItem, pListWidget]
 				 {
-					 int insertRow = itemList->indexFromItem( pBasicListItem ).row();
-					 auto listItem = itemList->takeItem( insertRow );
-					 itemList->removeItemWidget( listItem );
+					 int insertRow = pListWidget->indexFromItem( pBasicListItem ).row();
+					 auto listItem = pListWidget->takeItem( insertRow );
+					 pListWidget->removeItemWidget( listItem );
 					 delete listItem;
 				 } );
 
@@ -213,17 +213,17 @@ QListWidgetItem *CAdvancedOptionsDialog::createBasicListWidgetItem( const QStrin
 	}
 
 	pBasicListItem->setSizeHint( QSize( 0, 32 ) );
-	baseWidget->setLayout( pListItemLayout );
+	pBaseWidget->setLayout( pListItemLayout );
 	return pBasicListItem;
 }
 
-void CAdvancedOptionsDialog::addImageWidgetItem( const QString &name, const QString &path, bool removable )
+void CAdvancedOptionsDialog::addImageWidgetItem( const QString &imageFileName, const QString &imageFilePath, bool removable )
 {
 	auto pBaseWidget = new QWidget( this );
 
-	auto pAddImageItem = createBasicListWidgetItem( name, pBaseWidget, m_pMediaListWidget, IMAGE, removable );
+	auto pAddImageItem = createBasicListWidgetItem( imageFileName, pBaseWidget, m_pMediaListWidget, IMAGE, removable );
 
-	pAddImageItem->setData( Qt::UserRole, path );
+	pAddImageItem->setData( Qt::UserRole, imageFilePath );
 
 	int insertRow = m_pMediaListWidget->indexFromItem( m_pImageVideoSeparator ).row();
 	m_pMediaListWidget->insertItem( insertRow + 2, pAddImageItem );
@@ -231,24 +231,24 @@ void CAdvancedOptionsDialog::addImageWidgetItem( const QString &name, const QStr
 	m_pMediaListWidget->setItemWidget( pAddImageItem, pBaseWidget );
 }
 
-void CAdvancedOptionsDialog::addVideoWidgetItem( const QString &name, bool removable )
+void CAdvancedOptionsDialog::addVideoWidgetItem( const QString &videoUID, bool removable )
 {
 	auto pBaseWidget = new QWidget( this );
-	auto pAddVideoItem = createBasicListWidgetItem( name, pBaseWidget, m_pMediaListWidget, VIDEO, removable );
+	auto pAddVideoItem = createBasicListWidgetItem( videoUID, pBaseWidget, m_pMediaListWidget, VIDEO, removable );
 
-	pAddVideoItem->setData( Qt::UserRole, name );
+	pAddVideoItem->setData( Qt::UserRole, videoUID );
 
 	int insertRow = m_pMediaListWidget->indexFromItem( m_pImageVideoSeparator ).row();
 	m_pMediaListWidget->insertItem( insertRow, pAddVideoItem );
 	m_pMediaListWidget->setItemWidget( pAddVideoItem, pBaseWidget );
 }
 
-void CAdvancedOptionsDialog::addTagWidgetItem( const QString &name, bool removable )
+void CAdvancedOptionsDialog::addTagWidgetItem( const QString &tagName, bool removable )
 {
 	auto pBaseWidget = new QWidget( this );
-	auto pAddTagItem = createBasicListWidgetItem( name, pBaseWidget, m_pTagsListWidget, TAG, removable );
+	auto pAddTagItem = createBasicListWidgetItem( tagName, pBaseWidget, m_pTagsListWidget, TAG, removable );
 
-	pAddTagItem->setData( Qt::UserRole, name );
+	pAddTagItem->setData( Qt::UserRole, tagName );
 
 	m_pTagsListWidget->addItem( pAddTagItem );
 	m_pTagsListWidget->setItemWidget( pAddTagItem, pBaseWidget );
@@ -257,7 +257,7 @@ void CAdvancedOptionsDialog::addTagWidgetItem( const QString &name, bool removab
 void CAdvancedOptionsDialog::simpleInputDialog( QString &resultString )
 {
 	auto pSimpleVideoAddDialog = new QDialog( this );
-	pSimpleVideoAddDialog->setWindowTitle( "Input" );
+	pSimpleVideoAddDialog->setWindowTitle( "Input Field" );
 	pSimpleVideoAddDialog->setAttribute( Qt::WA_DeleteOnClose );
 
 	auto pSimpleVideoAddLayout = new QGridLayout( pSimpleVideoAddDialog );
@@ -269,22 +269,22 @@ void CAdvancedOptionsDialog::simpleInputDialog( QString &resultString )
 	auto pAddVideoButtonBox = new QDialogButtonBox( pSimpleVideoAddDialog );
 
 	auto pAddButton = pAddVideoButtonBox->addButton( "Add", QDialogButtonBox::ApplyRole );
-	pAddButton->setToolTip( "Cannot insert empty tag." );
+	pAddButton->setToolTip( "Cannot insert empty field." );
 	pAddButton->setDisabled( true );
 	pAddVideoButtonBox->addButton( "Cancel", QDialogButtonBox::RejectRole );
 
 	pSimpleVideoAddLayout->addWidget( pAddVideoButtonBox, 1, 0, Qt::AlignLeft );
 
-	connect( pAddVideoLineEdit, &QLineEdit::textEdited, this, [pAddButton]( const QString &text )
+	connect( pAddVideoLineEdit, &QLineEdit::textEdited, this, [pAddButton]( const QString &fieldText )
 			 {
-				 if ( text.toStdString().find_first_not_of( ' ' ) == std::string::npos || text.isEmpty() )
+				 if ( fieldText.toStdString().find_first_not_of( ' ' ) == std::string::npos || fieldText.isEmpty() )
 				 {
 					 pAddButton->setDisabled( true );
 					 pAddButton->setToolTip( "Cannot insert empty tag." );
 					 return;
 				 }
 
-				 auto remStartSpaces = QString( text ).replace( " ", "" );
+				 auto remStartSpaces = QString( fieldText ).replace( " ", "" );
 
 				 if ( remStartSpaces.compare( "Singleplayer" ) == 0 || remStartSpaces.compare( "Cooperative" ) == 0 )
 				 {
@@ -293,7 +293,7 @@ void CAdvancedOptionsDialog::simpleInputDialog( QString &resultString )
 					 return;
 				 }
 
-				 foreach( int ch, text.toStdString() )
+				 foreach( int ch, fieldText.toStdString() )
 					 if ( isprint( ch ) == 0 || char( ch ) == ',' )
 					 {
 						 pAddButton->setDisabled( true );
@@ -336,7 +336,7 @@ void CAdvancedOptionsDialog::populateDefaultTagListWidget()
 {
 	auto pAddTagItem = new QListWidgetItem( "+ Add Tag", nullptr, ADD_TAG );
 	m_pTagsListWidget->addItem( pAddTagItem );
-	this->addTagWidgetItem("Custom Visuals", false);
+	this->addTagWidgetItem( "Custom Visuals", false );
 }
 
 CMapUploader::CMapUploader( QWidget *pParent ) :
@@ -387,45 +387,45 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 	auto pCloseButton = pButtonBox->addButton( tr( "Cancel" ), QDialogButtonBox::RejectRole );
 	pDialogLayout->addWidget( pButtonBox, 6, 0, Qt::AlignLeft );
 
-	auto pTitleDescLayout = new QVBoxLayout();
-	pTitleDescLayout->setSpacing( 10 );
+	auto pTitleDesciptionLayout = new QVBoxLayout();
+	pTitleDesciptionLayout->setSpacing( 10 );
 
-	auto pTitle = new QLabel( tr( "Title:" ), this );
+	auto pTitleLabel = new QLabel( tr( "Title:" ), this );
 
-	pTitleDescLayout->addWidget( pTitle );
+	pTitleDesciptionLayout->addWidget( pTitleLabel );
 
 	m_pTitleLine = new QLineEdit( this );
 
-	pTitleDescLayout->addWidget( m_pTitleLine );
+	pTitleDesciptionLayout->addWidget( m_pTitleLine );
 
-	auto pDesc = new QLabel( tr( "Description:" ), this );
+	auto pDesciptionLabel = new QLabel( tr( "Description:" ), this );
 
-	pTitleDescLayout->addWidget( pDesc );
+	pTitleDesciptionLayout->addWidget( pDesciptionLabel );
 
-	m_pDescLine = new QTextEdit( this );
-	m_pDescLine->setMinimumHeight( 100 );
-	m_pDescLine->setMaximumHeight( 100 );
+	m_pDescriptionTextEdit = new QTextEdit( this );
+	m_pDescriptionTextEdit->setMinimumHeight( 100 );
+	m_pDescriptionTextEdit->setMaximumHeight( 100 );
 
-	pTitleDescLayout->addWidget( m_pDescLine );
+	pTitleDesciptionLayout->addWidget( m_pDescriptionTextEdit );
 
-	auto pFile = new QLabel( tr( "File:" ), this );
+	auto pFileLabel = new QLabel( tr( "File:" ), this );
 
-	pTitleDescLayout->addWidget( pFile );
+	pTitleDesciptionLayout->addWidget( pFileLabel );
 
 	auto pFileLayout = new QHBoxLayout();
 
-	m_pBSPFileEntry = new QLineEdit( this );
-	m_pBSPFileEntry->setReadOnly( true );
+	m_pBSPFileLineEdit = new QLineEdit( this );
+	m_pBSPFileLineEdit->setReadOnly( true );
 
-	pFileLayout->addWidget( m_pBSPFileEntry );
+	pFileLayout->addWidget( m_pBSPFileLineEdit );
 
 	auto pBSPBrowseButton = new QPushButton( tr( "Browse..." ), this );
 
 	pFileLayout->addWidget( pBSPBrowseButton );
 
-	pTitleDescLayout->addLayout( pFileLayout );
+	pTitleDesciptionLayout->addLayout( pFileLayout );
 
-	pDialogLayout->addLayout( pTitleDescLayout, 0, 1, 4, 1, Qt::AlignLeft );
+	pDialogLayout->addLayout( pTitleDesciptionLayout, 0, 1, 4, 1, Qt::AlignLeft );
 
 	pDialogLayout->setAlignment( Qt::AlignTop );
 
@@ -464,7 +464,7 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 					 {
 						 QString bspFile {};
 
-						 auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileEntry->text(), bspFile );
+						 auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileLineEdit->text(), bspFile );
 
 						 switch ( bspError )
 						 {
@@ -498,9 +498,8 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 
 						 if ( !SteamRemoteStorage()->UpdatePublishedFileFile( old_API_Handle, bspFile.toStdString().c_str() ) )
 						 {
-
-							 if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
-								 SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
+							 if ( SteamRemoteStorage()->FileExists( remoteFile.toUtf8().constData() ) )
+								 SteamRemoteStorage()->FileDelete( remoteFile.toUtf8().constData() );
 
 							 QMessageBox::critical( this, "Fatal Error", "Something went wrong with the uploading of the BSP, make sure the BSP exists and is valid." );
 							 return;
@@ -508,14 +507,12 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 
 						 SteamAPICall_t publishFileUpdateCall = SteamRemoteStorage()->CommitPublishedFileUpdate( old_API_Handle );
 						 m_CallOldApiResultSubmitItemUpdate.Set( publishFileUpdateCall, this, &CMapUploader::updateBSPWithOldWorkshopResult );
-
 					 }
 					 else
-					 	this->updateWorkshopItem( m_PublishedFileId );
-
+						 this->updateWorkshopItem( m_PublishedFileId );
 				 }
-
 			 } );
+
 	connect( pCloseButton, &QPushButton::clicked, this, [this]
 			 {
 				 this->close();
@@ -524,9 +521,8 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 
 void CMapUploader::updateBSPWithOldWorkshopResult( RemoteStorageUpdatePublishedFileResult_t *pItem, bool bFailure )
 {
-
-	if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
-		SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
+	if ( SteamRemoteStorage()->FileExists( remoteFile.toUtf8().constData() ) )
+		SteamRemoteStorage()->FileDelete( remoteFile.toUtf8().constData() );
 
 	if ( bFailure || pItem->m_eResult != 1 )
 	{
@@ -548,8 +544,8 @@ void CMapUploader::updateWorkshopItem( PublishedFileId_t publishedFileId )
 	auto updateItemHandle = SteamUGC()->StartItemUpdate( CMainView::m_GameID, publishedFileId );
 
 	SteamUGC()->SetItemTitle( updateItemHandle, m_pTitleLine->text().toLocal8Bit().constData() );
-	if ( !m_pDescLine->toPlainText().isEmpty() )
-		SteamUGC()->SetItemDescription( updateItemHandle, m_pDescLine->toPlainText().toLocal8Bit().constData() );
+	if ( !m_pDescriptionTextEdit->toPlainText().isEmpty() )
+		SteamUGC()->SetItemDescription( updateItemHandle, m_pDescriptionTextEdit->toPlainText().toLocal8Bit().constData() );
 
 	SteamUGC()->SetItemVisibility( updateItemHandle, static_cast<ERemoteStoragePublishedFileVisibility>( m_pAdvancedOptions->m_pVisibilityComboBox->currentData( Qt::UserRole ).toInt() ) );
 
@@ -624,7 +620,7 @@ void CMapUploader::updateWorkshopItemResult( SubmitItemUpdateResult_t *pItem, bo
 void CMapUploader::createNewWorkshopItem()
 {
 	QString bspFile {};
-	auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileEntry->text(), bspFile );
+	auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileLineEdit->text(), bspFile );
 
 	switch ( bspError )
 	{
@@ -654,16 +650,14 @@ void CMapUploader::createNewWorkshopItem()
 
 	remoteFile = bspFile;
 
-	auto PublishFileCall = SteamRemoteStorage()->PublishWorkshopFile( bspFile.toUtf8().constData(), "", CMainView::m_GameID, "", "", ERemoteStoragePublishedFileVisibility::k_ERemoteStoragePublishedFileVisibilityUnlisted, nullptr, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
-	m_CallResultPublishItem.Set(PublishFileCall, this, &CMapUploader::publishWorkshopItemResult);
-
+	auto PublishFileCall = SteamRemoteStorage()->PublishWorkshopFile( bspFile.toUtf8().constData(), "", CMainView::m_GameID, "", "", ERemoteStoragePublishedFileVisibility::k_ERemoteStoragePublishedFileVisibilityUnlisted, nullptr, EWorkshopFileType::k_EWorkshopFileTypeCommunity );
+	m_CallResultPublishItem.Set( PublishFileCall, this, &CMapUploader::publishWorkshopItemResult );
 }
 
 void CMapUploader::publishWorkshopItemResult( RemoteStoragePublishFileResult_t *pItem, bool bFailure )
 {
-
-	if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
-		SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
+	if ( SteamRemoteStorage()->FileExists( remoteFile.toUtf8().constData() ) )
+		SteamRemoteStorage()->FileDelete( remoteFile.toUtf8().constData() );
 
 	if ( bFailure || pItem->m_eResult != 1 )
 	{
@@ -677,7 +671,7 @@ void CMapUploader::publishWorkshopItemResult( RemoteStoragePublishFileResult_t *
 		return;
 	}
 
-	this->updateWorkshopItem(pItem->m_nPublishedFileId);
+	this->updateWorkshopItem( pItem->m_nPublishedFileId );
 }
 
 bool CMapUploader::retrieveBSP( const QString &path, QStringList &tagList, bool &ptiRequirements )
@@ -723,12 +717,12 @@ bool CMapUploader::retrieveBSP( const QString &path, QStringList &tagList, bool 
 
 bool CMapUploader::parseBSPEntitiesToStringList( const QString &rawEntityLump, QStringList &entityList )
 {
-	QString entityStack = "";
+	QString entityStringStack = "";
 	bool inQuotes = false;
 	int nestCount = 0;
 	for ( char character : rawEntityLump.toStdString() )
 	{
-		entityStack += character;
+		entityStringStack += character;
 		if ( character == '"' )
 		{
 			inQuotes = !inQuotes;
@@ -743,9 +737,9 @@ bool CMapUploader::parseBSPEntitiesToStringList( const QString &rawEntityLump, Q
 
 		if ( nestCount == 0 && character == '}' )
 		{
-			QString parsable = ( ( R"("entity" )" + entityStack ) );
-			entityList.push_back( parsable );
-			entityStack = "";
+			QString parsedEntity = ( ( R"("entity" )" + entityStringStack ) );
+			entityList.push_back( parsedEntity );
+			entityStringStack = "";
 		}
 	}
 	return true;
@@ -816,7 +810,7 @@ bool CMapUploader::getTagsFromEntityStringList( const QStringList &entityList, Q
 	return true;
 }
 
-QString CMapUploader::processImageForSteamUpload( const QString &filePath, SteamImageProcessError &fileError, bool constraints, int width, int height, int size )
+QString CMapUploader::processImageForSteamUpload( const QString &filePath, SteamImageProcessError &fileError, bool followSizeConstraints, int width, int height, int size )
 {
 	fileError = SteamImageProcessError::NO_ERROR;
 
@@ -824,7 +818,7 @@ QString CMapUploader::processImageForSteamUpload( const QString &filePath, Steam
 
 	auto steamUploadImageFileInfo = QFileInfo( filePath );
 
-	if ( constraints )
+	if ( followSizeConstraints )
 	{
 		steamUploadImage = steamUploadImage.scaled( width, height, Qt::IgnoreAspectRatio );
 
@@ -893,7 +887,7 @@ QString CMapUploader::processImageForSteamUpload( const QString &filePath, Steam
 
 CMapUploader::RemoteStorageUploadError CMapUploader::uploadToSteamLocalStorage( const QString &localPath, QString &storageFileName )
 {
-	constexpr const uint32 MAX_BSP_UPLOAD_CHUNK = 1024 * 1024 * 100; // 100mb
+	static constexpr const uint32 MAX_BSP_UPLOAD_CHUNK = 1024 * 1024 * 100; // 100mb
 
 	QFileInfo bspFileInfo( localPath );
 
@@ -965,15 +959,15 @@ void CMapUploader::setEditItem( const CMainView::FullUGCDetails &itemDetails )
 	QPixmap tempMap = QPixmap( itemDetails.thumbnailDetails );
 	tempMap = tempMap.scaled( 239, 134, Qt::IgnoreAspectRatio );
 	auto standardDetails = itemDetails.standardDetails;
-	m_EditPreviewCount = itemDetails.additionalDetails.amount;
+	m_EditPreviewCount = itemDetails.additionalDetails.previewItemCount;
 	m_pAdvancedOptionsButton->setEnabled( true );
 	m_pAdvancedOptionsButton->setToolTip( "" );
 	m_pPreviewImageLabel->setPixmap( tempMap );
 	m_pSteamToSAgreement->setChecked( true );
 	m_pOKButton->setText( "Update" );
 	m_pTitleLine->setText( standardDetails.m_rgchTitle );
-	m_pDescLine->setText( standardDetails.m_rgchDescription );
-	m_pBSPFileEntry->setText( standardDetails.m_pchFileName );
+	m_pDescriptionTextEdit->setText( standardDetails.m_rgchDescription );
+	m_pBSPFileLineEdit->setText( standardDetails.m_pchFileName );
 	m_PublishedFileId = standardDetails.m_nPublishedFileId;
 	m_pAdvancedOptions->setEditItem( itemDetails );
 	m_IsEditing = true;
@@ -1028,14 +1022,14 @@ bool CMapUploader::canUploadProceed( QString &errorString ) const
 
 void CMapUploader::onBrowseBSPClicked()
 {
-	QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.bsp", nullptr, FILE_PICKER_OPTS );
+	QString bsoFilePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.bsp", nullptr, FILE_PICKER_OPTS );
 
-	if ( filePath.isEmpty() )
+	if ( bsoFilePath.isEmpty() )
 		return;
 
 	QStringList tagList {};
 
-	if ( !this->retrieveBSP( filePath, tagList, m_MeetsPTIRequirements ) )
+	if ( !this->retrieveBSP( bsoFilePath, tagList, m_MeetsPTIRequirements ) )
 		return;
 
 	if ( !m_MeetsPTIRequirements )
@@ -1060,7 +1054,7 @@ void CMapUploader::onBrowseBSPClicked()
 		m_pAdvancedOptions->addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Cooperative" || tag == "Custom Visuals" ) );
 
 	m_pAdvancedOptionsButton->setEnabled( true );
-	m_pBSPFileEntry->setText( filePath );
+	m_pBSPFileLineEdit->setText( bsoFilePath );
 	m_EditedBSP = true;
 }
 

@@ -44,11 +44,11 @@ namespace ui
 
 	public:
 		void setEditItem( const CMainView::FullUGCDetails &itemDetails );
-		QListWidgetItem *createBasicListWidgetItem( const QString &labelText, QWidget *baseWidget, QListWidget *itemList, ListItemTypes type, bool removable = true );
-		void addImageWidgetItem( const QString &name, const QString &path, bool removable = true );
-		void addVideoWidgetItem( const QString &name, bool removable = true );
-		void addTagWidgetItem( const QString &name, bool removable = true );
-		void simpleInputDialog( QString &resultString );
+		QListWidgetItem *createBasicListWidgetItem( const QString &labelText, QWidget *pBaseWidget, QListWidget *pListWidget, ListItemTypes listItemType, bool removable = true );
+		void addImageWidgetItem( const QString &imageFileName, const QString &imageFilePath, bool removable = true );
+		void addVideoWidgetItem( const QString &videoUID, bool removable = true );
+		void addTagWidgetItem( const QString &tagName, bool removable = true );
+		void simpleInputDialog( QString &fieldText );
 		void populateDefaultMediaListWidget();
 		void populateDefaultTagListWidget();
 	};
@@ -56,7 +56,6 @@ namespace ui
 	class CMapUploader : public QDialog
 	{
 	public:
-
 		// We need to keep the strings alive long enough for
 		// m_CallOldApiResultSubmitItemUpdate to process them.
 		struct SteamTagListPreserver
@@ -97,8 +96,8 @@ namespace ui
 		QPushButton *m_pAdvancedOptionsButton;
 		QPushButton *m_pOKButton;
 		QLineEdit *m_pTitleLine;
-		QTextEdit *m_pDescLine;
-		QLineEdit *m_pBSPFileEntry;
+		QTextEdit *m_pDescriptionTextEdit;
+		QLineEdit *m_pBSPFileLineEdit;
 		QCheckBox *m_pSteamToSAgreement;
 		QLabel *m_pPreviewImageLabel;
 		QString m_ThumbnailPath;
@@ -123,7 +122,7 @@ namespace ui
 		bool retrieveBSP( const QString &path, QStringList &tagList, bool &ptiRequirements );
 		static bool parseBSPEntitiesToStringList( const QString &rawEntityLump, QStringList &entityList );
 		static bool getTagsFromEntityStringList( const QStringList &entityList, QStringList &tagList, bool &ptiRequirements );
-		static QString processImageForSteamUpload( const QString &filePath, SteamImageProcessError &fileError, bool constraints, int width, int height, int size );
+		static QString processImageForSteamUpload( const QString &filePath, SteamImageProcessError &fileError, bool followSizeConstraints, int width, int height, int size );
 		static CMapUploader::RemoteStorageUploadError uploadToSteamLocalStorage( const QString &localPath, QString &storageFileName );
 		void setEditItem( const CMainView::FullUGCDetails &itemDetails );
 		bool canUploadProceed( QString &errorString ) const;

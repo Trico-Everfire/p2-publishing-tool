@@ -15,7 +15,7 @@ namespace ui
 	public:
 		struct AdditionalUGCDetails
 		{
-			int amount = 0;
+			int previewItemCount = 0;
 			QVector<QStringList> imagePaths {};
 			QVector<QString> videoURLs {};
 		};
@@ -51,7 +51,6 @@ namespace ui
 		void onDeleteItem( DeleteItemResult_t *pItem, bool bFailure );
 
 	public:
-
 		CMainView::AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int previewCount, int itemIndex, PublishedFileId_t fileID );
 		QString downloadImageFromURL( const QString &imageUrl, QByteArray &imageData );
 		static bool isFileWritable( const QString &fullPath );

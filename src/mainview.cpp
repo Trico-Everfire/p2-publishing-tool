@@ -148,14 +148,14 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 
 	auto fullUGCDetails = FullUGCDetails {};
 
-	for ( int index = 0; index < pQuery->m_unNumResultsReturned; index++ )
+	for ( int itemIndex = 0; itemIndex < pQuery->m_unNumResultsReturned; itemIndex++ )
 	{
 		SteamUGCDetails_t pDetails {};
 
-		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, index, &pDetails );
+		SteamUGC()->GetQueryUGCResult( pQuery->m_handle, itemIndex, &pDetails );
 
 		char previewURL[MAX_URL_SIZE];
-		SteamUGC()->GetQueryUGCPreviewURL( pQuery->m_handle, index, previewURL, MAX_URL_SIZE );
+		SteamUGC()->GetQueryUGCPreviewURL( pQuery->m_handle, itemIndex, previewURL, MAX_URL_SIZE );
 
 		if ( QString( previewURL ).isEmpty() )
 		{
@@ -169,15 +169,15 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 		if ( fileName.isEmpty() )
 			continue;
 
-		auto fileDirectory = QDir::tempPath() + "/" + QString::number( pDetails.m_nPublishedFileId );
+		auto tempThumbnailFileDirecotry = QDir::tempPath() + "/" + QString::number( pDetails.m_nPublishedFileId );
 
-		if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+		if ( !QDir( tempThumbnailFileDirecotry ).exists() && !QDir().mkpath( tempThumbnailFileDirecotry ) )
 		{
-			QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+			QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + tempThumbnailFileDirecotry );
 			continue;
 		}
 
-		auto filePath = fileDirectory + "/" + fileName;
+		auto filePath = tempThumbnailFileDirecotry + "/" + fileName;
 
 		if ( !CMainView::isFileWritable( filePath ) )
 		{
@@ -199,27 +199,27 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 		fullUGCDetails.standardDetails = pDetails;
 		fullUGCDetails.thumbnailDetails = filePath;
 
-		auto count = SteamUGC()->GetQueryUGCNumAdditionalPreviews( pQuery->m_handle, index );
+		auto additionalPreviewsCount = SteamUGC()->GetQueryUGCNumAdditionalPreviews( pQuery->m_handle, itemIndex );
 
-		fullUGCDetails.additionalDetails = getAdditionalUGCPreviews( pQuery->m_handle, count, index, pDetails.m_nPublishedFileId );
+		fullUGCDetails.additionalDetails = getAdditionalUGCPreviews( pQuery->m_handle, additionalPreviewsCount, itemIndex, pDetails.m_nPublishedFileId );
 
-		QDateTime time = QDateTime::fromSecsSinceEpoch( pDetails.m_rtimeUpdated );
-		time.setTimeZone( QTimeZone( QByteArray( m_pTimezoneComboBox->currentText().toStdString().c_str() ) ) );
+		QDateTime itemLastUpdatedTimeStamp = QDateTime::fromSecsSinceEpoch( pDetails.m_rtimeUpdated );
+		itemLastUpdatedTimeStamp.setTimeZone( QTimeZone( QByteArray( m_pTimezoneComboBox->currentText().toStdString().c_str() ) ) );
 
-		auto pWorkshopitem = new QTreeWidgetItem( 0 );
-		pWorkshopitem->setText( 0, pDetails.m_rgchTitle );
-		pWorkshopitem->setText( 1, pDetails.m_pchFileName );
-		pWorkshopitem->setText( 2, time.toString() );
+		auto pWorkshopTreeItem = new QTreeWidgetItem( 0 );
+		pWorkshopTreeItem->setText( 0, pDetails.m_rgchTitle );
+		pWorkshopTreeItem->setText( 1, pDetails.m_pchFileName );
+		pWorkshopTreeItem->setText( 2, itemLastUpdatedTimeStamp.toString() );
 
-		pWorkshopitem->setData( 0, Qt::UserRole, pDetails.m_rtimeUpdated );
-		pWorkshopitem->setData( 1, Qt::UserRole, index );
+		pWorkshopTreeItem->setData( 0, Qt::UserRole, pDetails.m_rtimeUpdated );
+		pWorkshopTreeItem->setData( 1, Qt::UserRole, itemIndex );
 
-		pWorkshopitem->setTextAlignment( 0, Qt::AlignCenter );
-		pWorkshopitem->setTextAlignment( 1, Qt::AlignCenter );
-		pWorkshopitem->setTextAlignment( 2, Qt::AlignCenter );
-		m_pWorkshopItemTree->addTopLevelItem( pWorkshopitem );
+		pWorkshopTreeItem->setTextAlignment( 0, Qt::AlignCenter );
+		pWorkshopTreeItem->setTextAlignment( 1, Qt::AlignCenter );
+		pWorkshopTreeItem->setTextAlignment( 2, Qt::AlignCenter );
+		m_pWorkshopItemTree->addTopLevelItem( pWorkshopTreeItem );
 
-		m_SteamUGCDetailsList.insert( std::make_pair( index, fullUGCDetails ) );
+		m_SteamUGCDetailsList.insert( std::make_pair( itemIndex, fullUGCDetails ) );
 	}
 }
 
@@ -241,15 +241,15 @@ void CMainView::onDeletePressed()
 			 } );
 
 	deleteWarningMessageBox.setCheckBox( deleteWarningMessageCheckBox );
-	int ret = deleteWarningMessageBox.exec();
+	int deleteMessageBoxReturnType = deleteWarningMessageBox.exec();
 
-	if ( ret == QMessageBox::Ok && deleteWarningMessageCheckBox->isChecked() )
+	if ( deleteMessageBoxReturnType == QMessageBox::Ok && deleteWarningMessageCheckBox->isChecked() )
 	{
 		QTreeWidgetItem *pWorkshopItem = this->m_pWorkshopItemTree->selectedItems()[0];
-		int itemIndex = pWorkshopItem->data( 1, Qt::UserRole ).toInt();
-		FullUGCDetails workshopItemDetails = m_SteamUGCDetailsList.at( itemIndex );
-		SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( workshopItemDetails.standardDetails.m_nPublishedFileId );
-		m_CallResultDeleteItem.Set( deleteItemCall, this, &CMainView::onDeleteItem );
+		int workshopItemIndex = pWorkshopItem->data( 1, Qt::UserRole ).toInt();
+		FullUGCDetails workshopItemDetails = m_SteamUGCDetailsList.at( workshopItemIndex );
+		SteamAPICall_t deleteWorkshopItemCall = SteamUGC()->DeleteItem( workshopItemDetails.standardDetails.m_nPublishedFileId );
+		m_CallResultDeleteItem.Set( deleteWorkshopItemCall, this, &CMainView::onDeleteItem );
 	}
 }
 
@@ -268,79 +268,79 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 {
 	auto additionalDetails = AdditionalUGCDetails {};
 
-	additionalDetails.amount = previewCount;
+	additionalDetails.previewItemCount = previewCount;
 
 	for ( uint32 i = 0; i < previewCount; i++ )
 	{
-		char pchUrl[MAX_URL_SIZE];
-		char pchFileName[MAX_URL_SIZE];
-		EItemPreviewType pType;
+		char previewContentURL[MAX_URL_SIZE];
+		char previewContentFileName[MAX_URL_SIZE];
+		EItemPreviewType previewContentType;
 
 		SteamUGC()->GetQueryUGCAdditionalPreview( queryHandle, itemIndex, i,
-												  pchUrl, MAX_URL_SIZE, pchFileName,
-												  MAX_URL_SIZE, &pType );
+												  previewContentURL, MAX_URL_SIZE, previewContentFileName,
+												  MAX_URL_SIZE, &previewContentType );
 
-		if ( pType == k_EItemPreviewType_Image )
+		if ( previewContentType == k_EItemPreviewType_Image )
 		{
 			QByteArray imageData {};
 
-			auto fileName = this->downloadImageFromURL( pchUrl, imageData );
+			auto previewFileName = this->downloadImageFromURL( previewContentURL, imageData );
 
-			if ( fileName.isEmpty() )
+			if ( previewFileName.isEmpty() )
 				return AdditionalUGCDetails {};
 
-			auto fileDirectory = QDir::tempPath() + "/" + QString::number( fileID );
+			auto tempPreviewDirectory = QDir::tempPath() + "/" + QString::number( fileID );
 
-			if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+			if ( !QDir( tempPreviewDirectory ).exists() && !QDir().mkpath( tempPreviewDirectory ) )
 			{
-				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + tempPreviewDirectory );
 				return AdditionalUGCDetails {};
 			}
 
-			fileDirectory += "/additional/";
+			tempPreviewDirectory += "/additional/";
 
-			if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+			if ( !QDir( tempPreviewDirectory ).exists() && !QDir().mkpath( tempPreviewDirectory ) )
 			{
-				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + tempPreviewDirectory );
 				return AdditionalUGCDetails {};
 			}
 
 			quint32 uniqueFolderName = QRandomGenerator::global()->generate();
-			fileDirectory += QString::number( uniqueFolderName ) + "/";
+			tempPreviewDirectory += QString::number( uniqueFolderName ) + "/";
 
-			if ( !QDir( fileDirectory ).exists() && !QDir().mkpath( fileDirectory ) )
+			if ( !QDir( tempPreviewDirectory ).exists() && !QDir().mkpath( tempPreviewDirectory ) )
 			{
-				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + fileDirectory );
+				QMessageBox::critical( this, "Fatal Error", "Unable to create directory. (Permission Denied)\n" + tempPreviewDirectory );
 				return AdditionalUGCDetails {};
 			}
 
-			auto filePath = fileDirectory + "/" + fileName;
+			auto fullPreviewFilePath = tempPreviewDirectory + "/" + previewFileName;
 
-			if ( !CMainView::isFileWritable( filePath ) )
+			if ( !CMainView::isFileWritable( fullPreviewFilePath ) )
 			{
-				QMessageBox::critical( this, "Fatal Error", "Unable to download additional images. (Permission Denied)\n" + filePath );
+				QMessageBox::critical( this, "Fatal Error", "Unable to download additional images. (Permission Denied)\n" + fullPreviewFilePath );
 				return AdditionalUGCDetails {};
 			}
 
-			auto additionalImageFile = QFile( filePath );
+			auto additionalImageFile = QFile( fullPreviewFilePath );
 			additionalImageFile.open( QFile::WriteOnly );
 
 			if ( !additionalImageFile.write( imageData ) )
 			{
-				QMessageBox::critical( this, "Fatal Error", "Unable to download additional images. (Permission Denied)\n" + filePath );
+				QMessageBox::critical( this, "Fatal Error", "Unable to download additional images. (Permission Denied)\n" + fullPreviewFilePath );
 				return AdditionalUGCDetails {};
 			}
 			additionalImageFile.close();
 
 			auto fileInfoList = QStringList {};
-			fileInfoList.append( pchFileName );
-			fileInfoList.append( filePath );
+			fileInfoList.append( previewContentFileName );
+			fileInfoList.append( fullPreviewFilePath );
 
 			additionalDetails.imagePaths.append( fileInfoList );
 		}
-		if ( pType == k_EItemPreviewType_YouTubeVideo )
+		if ( previewContentType == k_EItemPreviewType_YouTubeVideo )
 		{
-			additionalDetails.videoURLs.append( pchUrl );
+			additionalDetails.videoURLs.append( previewContentURL );
 			break;
 		}
 	}
@@ -350,39 +350,40 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 
 QString CMainView::downloadImageFromURL( const QString &imageUrl, QByteArray &imageData )
 {
-	QNetworkAccessManager manager;
-	QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( imageUrl ) ) );
+	QNetworkAccessManager networkAccessManager;
+	QNetworkReply *pNetworkReply = networkAccessManager.get( QNetworkRequest( QUrl( imageUrl ) ) );
 
-	QEventLoop wait;
-	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &wait, SLOT( quit() ) );
+	QEventLoop awaitDownloadEventLoop;
+	connect( &networkAccessManager, SIGNAL( finished( QNetworkReply * ) ), &awaitDownloadEventLoop, SLOT( quit() ) );
 
-	QTimer oneTake;
-	oneTake.start( 10000 );
-	connect( &oneTake, SIGNAL( timeout() ), &wait, SLOT( quit() ) );
-	wait.exec();
+	QTimer downloadTimeoutTimer;
+	static constexpr const uint32 TIMEOUT_TIME = 10 * 1000; // 10 seconds.
+	downloadTimeoutTimer.start( TIMEOUT_TIME );
+	connect( &downloadTimeoutTimer, SIGNAL( timeout() ), &awaitDownloadEventLoop, SLOT( quit() ) );
+	awaitDownloadEventLoop.exec();
 
-	QRegularExpression filenameRegex( R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))" );
-	auto filenameMatch = filenameRegex.match( reply->rawHeader( "Content-Disposition" ) );
-	auto fileName = filenameMatch.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
+	QRegularExpression downloadFilenameRegex( R"(filename[^;=\n]*=(?<fileName>(['"]).*?\2|[^;\n]*))" );
+	auto downloadFilenameRegexMatchResult = downloadFilenameRegex.match( pNetworkReply->rawHeader( "Content-Disposition" ) );
+	auto downloadFileName = downloadFilenameRegexMatchResult.captured( "fileName" ).replace( "UTF-8''", "" ).replace( R"(")", "" );
 
-	QImageReader imageReader( reply );
-	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
+	QImageReader downloadImageVerificationImageReader( pNetworkReply );
+	if ( pNetworkReply->error() != QNetworkReply::NetworkError::NoError || !downloadImageVerificationImageReader.canRead() )
 	{
-		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + imageUrl + "\nNetwork error code: " + QString::number( reply->error() ) + "\nImage reader error code: " + QString::number( imageReader.error() ) ) );
+		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + imageUrl + "\nNetwork error code: " + QString::number( pNetworkReply->error() ) + "\nImage reader error code: " + QString::number( downloadImageVerificationImageReader.error() ) ) );
 		return "";
 	}
 
-	imageData = reply->readAll();
+	imageData = pNetworkReply->readAll();
 
-	reply->deleteLater();
+	pNetworkReply->deleteLater();
 
-	return fileName;
+	return downloadFileName;
 }
 
 bool CMainView::isFileWritable( const QString &fullPath )
 {
-	auto fileInfo = QFileInfo( fullPath );
-	auto filePathInfo = QFileInfo( fileInfo.path() );
+	auto writableFileInfo = QFileInfo( fullPath );
+	auto writableFilePathInfo = QFileInfo( writableFileInfo.path() );
 
-	return ( filePathInfo.isWritable() || fileInfo.isWritable() );
+	return ( writableFilePathInfo.isWritable() || writableFileInfo.isWritable() );
 }

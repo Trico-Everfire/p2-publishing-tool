@@ -73,4 +73,3 @@ bool CElementList::isInitialised()
 {
 	return m_Initialised;
 }
-
