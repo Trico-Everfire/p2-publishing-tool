@@ -1,7 +1,7 @@
 name: Build
 on:
   push:
-    branches: [ master ]
+    branches: [ master, fix/thumbnail-fix, new/rewrite ]
   workflow_dispatch: # nothing here
 jobs:
   build-linux:
@@ -12,39 +12,23 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-        
+
       - name: Checkout submodules
         run: git submodule update --init --recursive
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 5.15.2
+          version: 6.4.1
           host: linux
           target: desktop
           dir: '${{github.workspace}}/libs/Qt'
 
       - name: Install Steamworks
-        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}/libs/Steam-Workshop-API/sdk"
-
-      - name: Copy QT Network .so
-        run: | 
-          cp "${{env.Qt5_DIR}}/lib/libQt5Network.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Network.so.5.15.2"
-
-      - name: Copy QT Widgets .so
-        run: |
-          cp "${{env.Qt5_DIR}}/lib/libQt5Widgets.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Widgets.so.5.15.2"
-
-      - name: Copy QT Gui .so
-        run: |
-          cp "${{env.Qt5_DIR}}/lib/libQt5Gui.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Gui.so.5.15.2"
-
-      - name: Copy QT Core .so
-        run: |
-          cp "${{env.Qt5_DIR}}/lib/libQt5Core.so.5.15.2" "${{github.workspace}}/libs/Qt/libQt5Core.so.5.15.2"
+        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}/libs/Steam-API"
 
       - name: Configure CMake
-        run: cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/5.15.2/gcc_64'
+        run: cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/6.4.1/gcc_64'
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
@@ -54,14 +38,17 @@ jobs:
         with:
           name: p2-publishing-tool-linux-${{matrix.build_type}}
           path: |
-            ${{github.workspace}}/build/p2_map_publisher
+            ${{github.workspace}}/build/p2_map_uploader
             ${{github.workspace}}/build/Credits.txt
-            ${{github.workspace}}/build/*.s*
+            ${{github.workspace}}/build/tls/*.so*
+            ${{github.workspace}}/build/imageformats/*.so*
+            ${{github.workspace}}/build/platforms/*.so*
+            ${{github.workspace}}/build/*.so*
 
   build-msvc:
     strategy:
       matrix:
-        build_type: [Debug, Release]
+        build_type: [ Debug, Release ]
     runs-on: windows-2019
     defaults:
       run:
@@ -69,25 +56,28 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-        
+
       - name: Checkout submodules
         run: git submodule update --init --recursive
-        
-      - name: Install Qt5
+
+      - name: Install Qt6
         uses: jurplel/install-qt-action@v2.14.0
         with:
           dir: '${{github.workspace}}/libs/Qt'
-          version: 5.15.2
+
+          version: 6.4.1
           arch: win64_msvc2019_64
 
       - name: Install Steamworks
-        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-Workshop-API\sdk"
+        run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}\libs\Steam-API"
 
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure CMake
-        run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/5.15.2/msvc2019_64'
+        env:
+          CMAKE_PREFIX_PATH: ${{env.Qt6_Dir}}
+        run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR=${{github.workspace}}\libs\Qt\Qt\6.4.1\msvc2019_64
 
       - name: Build
         run: cmake --build build --config ${{matrix.build_type}}
@@ -97,7 +87,11 @@ jobs:
         with:
           name: p2-publishing-tool-windows-${{matrix.build_type}}
           path: |
-            ${{github.workspace}}\build\p2_map_publisher.exe
+            ${{github.workspace}}\build\*.exe
             ${{github.workspace}}\build\*.dll
             ${{github.workspace}}\build\platforms\*.dll
+            ${{github.workspace}}\build\tls\*.dll
+            ${{github.workspace}}\build\imageformats\*.dll
             ${{github.workspace}}\build\Credits.txt
+            ${{github.workspace}}/libs/Steam-Workshop-API/sdk/openssl/*.dll
+            

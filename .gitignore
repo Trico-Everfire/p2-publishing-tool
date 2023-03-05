@@ -1,27 +1,15 @@
-build/
+build
 .vscode 
 .idea
 .ccls-cache
-libs/Steam-Workshop-API/sdk/
-libs/Qt/**
-!libs/Qt/Readme.txt
-build_old/
-.cmake/
-libs/JSON/
-*.txt.user
-Testing/
-configs/
-libs/SpeedyKeyV/**
 
-
+# Libs
+libs/Steam-API/
+libs/Steam-API
+!libs/.gitkeep
 # CMake with Visual Studio
-tags
-*.workspace
-.codelite
 .vs/
-.vscode/
 CMakeFiles/
-out/
 [Dd]ebug*/
 [Rr]elease*/
 *.dir/
@@ -29,8 +17,8 @@ out/
 *.vcxproj*
 cmake_install.cmake
 CMakeCache.txt
-CMakeSettings.json
 *.sln
 
 # CMake with CLion
 cmake-build-*/
+libs/steam
