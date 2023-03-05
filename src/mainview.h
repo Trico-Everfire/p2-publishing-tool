@@ -27,29 +27,33 @@ namespace ui
 			AdditionalUGCDetails additionalDetails;
 		};
 
-		std::map<int, FullUGCDetails> m_SteamUGCDetailsList;
-
+	public:
 		static constexpr int MAX_URL_SIZE = 2048;
+		static constexpr AppId_t m_GameID = 620;
+
+		std::map<int, FullUGCDetails> m_SteamUGCDetailsList;
+		QTreeWidget *m_pWorkshopItemTree;
+		QComboBox *m_pTimezoneComboBox;
 
 	private:
 		QTimer m_CallbackTimer;
 
 	public:
 		CMainView( QWidget *pParent = nullptr );
-		static constexpr AppId_t m_GameID = 620;
+
+	public:
+		void populateWorkshopList();
+		CCallResult<CMainView, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
 		void onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure );
 
-		QTreeWidget *m_pWorkshopItemTree;
-		QComboBox *m_pTimezoneComboBox;
-
-		CCallResult<CMainView, SteamUGCQueryCompleted_t> m_SteamCallResultUGCRequest;
-		CCallResult<CMainView, DeleteItemResult_t> m_CallResultDeleteItem;
-
-		void populateWorkshopList();
 		void onDeletePressed();
+		CCallResult<CMainView, DeleteItemResult_t> m_CallResultDeleteItem;
 		void onDeleteItem( DeleteItemResult_t *pItem, bool bFailure );
-		CMainView::AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int count, int itemIndex, PublishedFileId_t fileID );
-		QString downloadImageFromURL( const QString &url, QByteArray &imageData );
+
+	public:
+
+		CMainView::AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int previewCount, int itemIndex, PublishedFileId_t fileID );
+		QString downloadImageFromURL( const QString &imageUrl, QByteArray &imageData );
 		static bool isFileWritable( const QString &fullPath );
 	};
 

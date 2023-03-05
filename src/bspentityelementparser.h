@@ -7,9 +7,9 @@
 class CElementList
 {
 private:
-	inline static bool initialised = false;
-	inline static std::unique_ptr<KeyValueRoot> elementList;
-	inline static const QString defaultElementList = "\"entities\" {\n"
+	inline static bool m_Initialised = false;
+	inline static std::unique_ptr<KeyValueRoot> m_ElementList;
+	inline static const QString m_DefaultElementListString = "\"entities\" {\n"
 													 "    \"logic_relay\" {\n"
 													 "        \"disable_pti_audio\" \"1\"\n"
 													 "        \"tag\" \"Custom Story\"\n"
@@ -73,9 +73,9 @@ private:
 public:
 	enum class ListInitResponse
 	{
-		FILENOTFOUND = 0,
-		FILEINVALID,
-		FILEINITIALISED
+		FILE_NOT_FOUND = 0,
+		FILE_INVALID,
+		FILE_INITIALISED
 	};
 	static ListInitResponse initialiseElementList();
 	static KeyValueRoot *getElementList();

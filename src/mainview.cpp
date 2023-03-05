@@ -120,6 +120,21 @@ CMainView::CMainView( QWidget *pParent ) :
 			 } );
 }
 
+void CMainView::populateWorkshopList()
+{
+	UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(),
+																		   k_EUserUGCList_Published,
+																		   k_EUGCMatchingUGCType_Items_ReadyToUse,
+																		   k_EUserUGCListSortOrder_CreationOrderDesc,
+																		   SteamUtils()->GetAppID(), m_GameID, 1 );
+	SteamUGC()->SetReturnAdditionalPreviews( hQueryResult, true );
+	SteamUGC()->SetReturnLongDescription( hQueryResult, true );
+	SteamUGC()->SetReturnMetadata( hQueryResult, true );
+	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
+	m_SteamCallResultUGCRequest.Set( hApiQueryHandle, this, &CMainView::onSendQueryUGCRequest );
+	SteamUGC()->ReleaseQueryUGCRequest( hQueryResult );
+}
+
 void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bFailure )
 {
 	if ( bFailure || pQuery->m_eResult != 1 )
@@ -208,21 +223,54 @@ void CMainView::onSendQueryUGCRequest( SteamUGCQueryCompleted_t *pQuery, bool bF
 	}
 }
 
-bool CMainView::isFileWritable( const QString &fullPath )
+void CMainView::onDeletePressed()
 {
-	auto fileInfo = QFileInfo( fullPath );
-	auto filePathInfo = QFileInfo( fileInfo.path() );
+	QMessageBox deleteWarningMessageBox( QMessageBox::Icon::Critical, "DELETING ITEM", "This action will delete this item permanently from the workshop!", QMessageBox::Ok | QMessageBox::Abort, this );
+	auto deleteWarningMessageCheckBox = new QCheckBox( "I understand that this will delete this item from the workshop.", &deleteWarningMessageBox );
+	deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( true );
+	connect( deleteWarningMessageCheckBox, &QCheckBox::stateChanged, this, [&]( int state )
+			 {
+				 if ( state == 0 )
+				 {
+					 deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( true );
+				 }
+				 else
+				 {
+					 deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( false );
+				 }
+			 } );
 
-	return ( filePathInfo.isWritable() || fileInfo.isWritable() );
+	deleteWarningMessageBox.setCheckBox( deleteWarningMessageCheckBox );
+	int ret = deleteWarningMessageBox.exec();
+
+	if ( ret == QMessageBox::Ok && deleteWarningMessageCheckBox->isChecked() )
+	{
+		QTreeWidgetItem *pWorkshopItem = this->m_pWorkshopItemTree->selectedItems()[0];
+		int itemIndex = pWorkshopItem->data( 1, Qt::UserRole ).toInt();
+		FullUGCDetails workshopItemDetails = m_SteamUGCDetailsList.at( itemIndex );
+		SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( workshopItemDetails.standardDetails.m_nPublishedFileId );
+		m_CallResultDeleteItem.Set( deleteItemCall, this, &CMainView::onDeleteItem );
+	}
 }
 
-CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int count, int itemIndex, PublishedFileId_t fileID )
+void CMainView::onDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
+{
+	if ( bFailure || pItem->m_eResult != 1 )
+	{
+		QMessageBox::critical( this, "Fatal Error", "Failed to delete item, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
+		return;
+	}
+
+	this->populateWorkshopList();
+}
+
+CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int previewCount, int itemIndex, PublishedFileId_t fileID )
 {
 	auto additionalDetails = AdditionalUGCDetails {};
 
-	additionalDetails.amount = count;
+	additionalDetails.amount = previewCount;
 
-	for ( uint32 i = 0; i < count; i++ )
+	for ( uint32 i = 0; i < previewCount; i++ )
 	{
 		char pchUrl[MAX_URL_SIZE];
 		char pchFileName[MAX_URL_SIZE];
@@ -300,10 +348,10 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 	return additionalDetails;
 }
 
-QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageData )
+QString CMainView::downloadImageFromURL( const QString &imageUrl, QByteArray &imageData )
 {
 	QNetworkAccessManager manager;
-	QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( url ) ) );
+	QNetworkReply *reply = manager.get( QNetworkRequest( QUrl( imageUrl ) ) );
 
 	QEventLoop wait;
 	connect( &manager, SIGNAL( finished( QNetworkReply * ) ), &wait, SLOT( quit() ) );
@@ -320,7 +368,7 @@ QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageDa
 	QImageReader imageReader( reply );
 	if ( reply->error() != QNetworkReply::NetworkError::NoError || !imageReader.canRead() )
 	{
-		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + url + "\nNetwork error code: " + QString::number( reply->error() ) + "\nImage reader error code: " + QString::number( imageReader.error() ) ) );
+		QMessageBox::critical( this, "Failed Download", ( QString( "Failed retrieve image : " ) + imageUrl + "\nNetwork error code: " + QString::number( reply->error() ) + "\nImage reader error code: " + QString::number( imageReader.error() ) ) );
 		return "";
 	}
 
@@ -331,58 +379,10 @@ QString CMainView::downloadImageFromURL( const QString &url, QByteArray &imageDa
 	return fileName;
 }
 
-void CMainView::populateWorkshopList()
+bool CMainView::isFileWritable( const QString &fullPath )
 {
-	UGCQueryHandle_t hQueryResult = SteamUGC()->CreateQueryUserUGCRequest( SteamUser()->GetSteamID().GetAccountID(),
-																		   k_EUserUGCList_Published,
-																		   k_EUGCMatchingUGCType_Items_ReadyToUse,
-																		   k_EUserUGCListSortOrder_CreationOrderDesc,
-																		   SteamUtils()->GetAppID(), m_GameID, 1 );
-	SteamUGC()->SetReturnAdditionalPreviews( hQueryResult, true );
-	SteamUGC()->SetReturnLongDescription( hQueryResult, true );
-	SteamUGC()->SetReturnMetadata( hQueryResult, true );
-	SteamAPICall_t hApiQueryHandle = SteamUGC()->SendQueryUGCRequest( hQueryResult );
-	m_SteamCallResultUGCRequest.Set( hApiQueryHandle, this, &CMainView::onSendQueryUGCRequest );
-	SteamUGC()->ReleaseQueryUGCRequest( hQueryResult );
-}
+	auto fileInfo = QFileInfo( fullPath );
+	auto filePathInfo = QFileInfo( fileInfo.path() );
 
-void CMainView::onDeletePressed()
-{
-	QMessageBox deleteWarningMessageBox( QMessageBox::Icon::Critical, "DELETING ITEM", "This action will delete this item permanently from the workshop!", QMessageBox::Ok | QMessageBox::Abort, this );
-	auto deleteWarningMessageCheckBox = new QCheckBox( "I understand that this will delete this item from the workshop.", &deleteWarningMessageBox );
-	deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( true );
-	connect( deleteWarningMessageCheckBox, &QCheckBox::stateChanged, this, [&]( int state )
-			 {
-				 if ( state == 0 )
-				 {
-					 deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( true );
-				 }
-				 else
-				 {
-					 deleteWarningMessageBox.button( QMessageBox::Ok )->setDisabled( false );
-				 }
-			 } );
-
-	deleteWarningMessageBox.setCheckBox( deleteWarningMessageCheckBox );
-	int ret = deleteWarningMessageBox.exec();
-
-	if ( ret == QMessageBox::Ok && deleteWarningMessageCheckBox->isChecked() )
-	{
-		QTreeWidgetItem *pWorkshopItem = this->m_pWorkshopItemTree->selectedItems()[0];
-		int itemIndex = pWorkshopItem->data( 1, Qt::UserRole ).toInt();
-		FullUGCDetails workshopItemDetails = m_SteamUGCDetailsList.at( itemIndex );
-		SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( workshopItemDetails.standardDetails.m_nPublishedFileId );
-		m_CallResultDeleteItem.Set( deleteItemCall, this, &CMainView::onDeleteItem );
-	}
-}
-
-void CMainView::onDeleteItem( DeleteItemResult_t *pItem, bool bFailure )
-{
-	if ( bFailure || pItem->m_eResult != 1 )
-	{
-		QMessageBox::critical( this, "Fatal Error", "Failed to delete item, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
-		return;
-	}
-
-	this->populateWorkshopList();
+	return ( filePathInfo.isWritable() || fileInfo.isWritable() );
 }

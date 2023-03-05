@@ -10,65 +10,67 @@ using namespace ui;
 
 CElementList::ListInitResponse CElementList::initialiseElementList()
 {
-	QFile keyvalueFile = QFile( QDir::currentPath() + "/elements.kv" );
+	QFile elementKeyValueFile = QFile( QDir::currentPath() + "/elements.kv" );
 
-	std::unique_ptr<KeyValueRoot> mainRoot = std::make_unique<KeyValueRoot>();
+	std::unique_ptr<KeyValueRoot> elementKeyValueRoot = std::make_unique<KeyValueRoot>();
 
 	if ( !CMainView::isFileWritable( QDir::currentPath() + "/elements.kv" ) )
 	{
-		mainRoot->Parse( defaultElementList.toStdString().c_str() );
+		elementKeyValueRoot->Parse( m_DefaultElementListString.toStdString().c_str() );
 
-		elementList = std::move( mainRoot );
-		initialised = true;
+		m_ElementList = std::move( elementKeyValueRoot );
+		m_Initialised = true;
 
-		return ListInitResponse::FILEINVALID;
+		return ListInitResponse::FILE_INVALID;
 	}
 
-	if ( !keyvalueFile.exists() )
+	if ( !elementKeyValueFile.exists() )
 	{
-		keyvalueFile.open( QIODevice::ReadWrite );
+		elementKeyValueFile.open( QIODevice::ReadWrite );
 
-		QTextStream stream( &keyvalueFile );
-		stream << defaultElementList << Qt::endl;
+		QTextStream elementKeyValueFileStream( &elementKeyValueFile );
+		elementKeyValueFileStream << m_DefaultElementListString << Qt::endl;
 
-		keyvalueFile.close();
+		elementKeyValueFile.close();
 
-		mainRoot->Parse( defaultElementList.toStdString().c_str() );
+		elementKeyValueRoot->Parse( m_DefaultElementListString.toStdString().c_str() );
 
-		elementList = std::move( mainRoot );
-		initialised = true;
+		m_ElementList = std::move( elementKeyValueRoot );
+		m_Initialised = true;
 
-		return ListInitResponse::FILENOTFOUND;
+		return ListInitResponse::FILE_NOT_FOUND;
 	};
 
-	keyvalueFile.open( QIODevice::ReadOnly );
-	KeyValueErrorCode code = mainRoot->Parse( keyvalueFile.readAll().constData() );
+	elementKeyValueFile.open( QIODevice::ReadOnly );
+	KeyValueErrorCode keyValueErrorCode = elementKeyValueRoot->Parse( elementKeyValueFile.readAll().constData() );
 
-	if ( code != KeyValueErrorCode::NO_ERROR )
+	if ( keyValueErrorCode != KeyValueErrorCode::NO_ERROR )
 	{
-		mainRoot->Parse( defaultElementList.toStdString().c_str() );
+		elementKeyValueRoot->Parse( m_DefaultElementListString.toStdString().c_str() );
 
-		keyvalueFile.close();
+		elementKeyValueFile.close();
 
-		elementList = std::move( mainRoot );
-		initialised = true;
+		m_ElementList = std::move( elementKeyValueRoot );
+		m_Initialised = true;
 
-		return ListInitResponse::FILEINVALID;
+		return ListInitResponse::FILE_INVALID;
 	}
 
-	keyvalueFile.close();
+	elementKeyValueFile.close();
 
-	elementList = std::move( mainRoot );
-	initialised = true;
+	m_ElementList = std::move( elementKeyValueRoot );
+	m_Initialised = true;
 
-	return ListInitResponse::FILEINITIALISED;
-}
-bool CElementList::isInitialised()
-{
-	return initialised;
+	return ListInitResponse::FILE_INITIALISED;
 }
 
 KeyValueRoot *CElementList::getElementList()
 {
-	return elementList.get();
+	return m_ElementList.get();
 }
+
+bool CElementList::isInitialised()
+{
+	return m_Initialised;
+}
+

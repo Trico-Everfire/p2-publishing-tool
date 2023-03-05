@@ -19,6 +19,326 @@
 
 using namespace ui;
 
+CAdvancedOptionsDialog::CAdvancedOptionsDialog( QWidget *pParent ) :
+	QDialog( pParent )
+{
+	this->setWindowTitle( "Advanced Options" );
+
+	auto pDialogLayout = new QGridLayout( this );
+
+	auto pMediaGroupBox = new QGroupBox( tr( "Media" ), this );
+
+	auto pMediaLayout = new QGridLayout( pMediaGroupBox );
+
+	m_pImagePreviewLabel = new QLabel( this );
+	m_pImagePreviewLabel->setMinimumSize( 256, 144 );
+	QPixmap tempMap = QPixmap( ":/resource/SampleImage.png" );
+	tempMap = tempMap.scaled( 239, 134, Qt::IgnoreAspectRatio );
+	m_pImagePreviewLabel->setPixmap( tempMap );
+	pMediaLayout->addWidget( m_pImagePreviewLabel, 0, 0 );
+
+	m_pMediaListWidget = new QListWidget( this );
+	m_pMediaListWidget->setSizePolicy( QSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding ) );
+	this->populateDefaultMediaListWidget();
+
+	pMediaLayout->addWidget( m_pMediaListWidget, 0, 1 );
+
+	pDialogLayout->addWidget( pMediaGroupBox, 0, 0, 1, 4 );
+
+	auto pTagsGroupBox = new QGroupBox( tr( "Tags" ), this );
+
+	auto pTagsLayout = new QGridLayout( pTagsGroupBox );
+
+	m_pTagsListWidget = new QListWidget( this );
+	m_pTagsListWidget->setSizePolicy( QSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding ) );
+	this->populateDefaultTagListWidget();
+
+	pTagsLayout->addWidget( m_pTagsListWidget, 0, 0 );
+
+	pDialogLayout->addWidget( pTagsGroupBox, 1, 0, 1, 3 );
+
+	m_pPatchNoteGroupBox = new QGroupBox( tr( "Patch Notes" ), this );
+	m_pPatchNoteGroupBox->setDisabled( true );
+
+	auto pPatchNoteLayout = new QGridLayout( m_pPatchNoteGroupBox );
+
+	m_pPatchNoteTextEdit = new QTextEdit( this );
+
+	pPatchNoteLayout->addWidget( m_pPatchNoteTextEdit );
+
+	pDialogLayout->addWidget( m_pPatchNoteGroupBox, 1, 3, 1, 1 );
+
+	auto pPTIInstanceVisibilityGroupBox = new QGroupBox( this );
+
+	auto pPTIInstanceVisibilityLayout = new QGridLayout( pPTIInstanceVisibilityGroupBox );
+
+	m_pPTIInstanceCheckBox = new QCheckBox( "Allow upload without PTI Instance", this );
+	pPTIInstanceVisibilityLayout->addWidget( m_pPTIInstanceCheckBox, 0, 0, 1, 3, Qt::AlignLeft );
+
+	auto pVisbilityLayout = new QHBoxLayout();
+
+	auto pVisibilityLabel = new QLabel( "Visibility:", this );
+	pVisbilityLayout->addWidget( pVisibilityLabel );
+
+	m_pVisibilityComboBox = new QComboBox( this );
+	m_pVisibilityComboBox->addItem( "public", k_ERemoteStoragePublishedFileVisibilityPublic );
+	m_pVisibilityComboBox->addItem( "private", k_ERemoteStoragePublishedFileVisibilityPrivate );
+	m_pVisibilityComboBox->addItem( "friends", k_ERemoteStoragePublishedFileVisibilityFriendsOnly );
+	m_pVisibilityComboBox->addItem( "unlisted", k_ERemoteStoragePublishedFileVisibilityUnlisted );
+
+	pVisbilityLayout->addWidget( m_pVisibilityComboBox );
+
+	pPTIInstanceVisibilityLayout->addLayout( pVisbilityLayout, 0, 4, Qt::AlignRight );
+
+	pDialogLayout->addWidget( pPTIInstanceVisibilityGroupBox, 2, 0, 1, 4 );
+
+	m_pCloseBox = new QDialogButtonBox( this );
+	auto closeButton = m_pCloseBox->addButton( "Close", QDialogButtonBox::ApplyRole );
+	pDialogLayout->addWidget( m_pCloseBox, 3, 0, 1, 4, Qt::AlignLeft );
+
+	connect( closeButton, &QPushButton::clicked, this, &CAdvancedOptionsDialog::close );
+
+	connect( m_pMediaListWidget, &QListWidget::itemDoubleClicked, this, [this]( QListWidgetItem *item )
+			 {
+				 if ( item->type() == ADD_IMAGE )
+				 {
+					 auto imageFilePath = QFileDialog::getOpenFileName( this, "Image File", "./", "(Images) *.png *.jpg *.jpeg", nullptr, FILE_PICKER_OPTS );
+
+					 if ( imageFilePath.isEmpty() )
+						 return;
+
+					 CMapUploader::SteamImageProcessError processError;
+					 auto thumbnailScaledFilepath = CMapUploader::processImageForSteamUpload( imageFilePath, processError, false, 0, 0, CMapUploader::MAX_IMAGE_SIZE );
+
+					 switch ( processError )
+					 {
+						 case CMapUploader::SteamImageProcessError::FILE_TOO_LARGE:
+							 QMessageBox::critical( this, "Fatal Error", "The file is too large to post to the Steam Workshop.\n We do attempt to reduce quality to fit the image, but were unable to get it down far enough." );
+							 return;
+						 case CMapUploader::SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR:
+							 QMessageBox::critical( this, "Fatal Error", "Unable to create temp folder. (Permission Denied)\n" + thumbnailScaledFilepath );
+							 return;
+						 case CMapUploader::SteamImageProcessError::FILE_SAVE_ERROR:
+							 QMessageBox::critical( this, "Fatal Error", "Unable to store scaled image. (Permission Denied)\n" + thumbnailScaledFilepath );
+							 return;
+						 default:
+							 break;
+					 }
+
+					 auto imageFileInfo = QFileInfo( thumbnailScaledFilepath );
+					 this->addImageWidgetItem( imageFileInfo.fileName(), thumbnailScaledFilepath );
+				 }
+
+				 if ( item->type() == ADD_VIDEO )
+				 {
+					 QString addVideoResult;
+					 this->simpleInputDialog( addVideoResult );
+					 this->addVideoWidgetItem( addVideoResult );
+				 }
+			 } );
+
+	connect( m_pMediaListWidget, &QListWidget::itemClicked, this, [this]( QListWidgetItem *item )
+			 {
+				 if ( item->type() == IMAGE )
+					 m_pImagePreviewLabel->setPixmap( QPixmap( ( item->data( Qt::UserRole ).toString() ) ).scaled( 239, 134, Qt::IgnoreAspectRatio ) );
+			 } );
+
+	connect( m_pTagsListWidget, &QListWidget::itemDoubleClicked, this, [this]( QListWidgetItem *item )
+			 {
+				 if ( item->type() == ADD_TAG )
+				 {
+					 QString addTagResult;
+
+					 this->simpleInputDialog( addTagResult );
+					 if ( !addTagResult.isEmpty() )
+						 this->addTagWidgetItem( addTagResult );
+				 }
+			 } );
+}
+
+void CAdvancedOptionsDialog::setEditItem( const CMainView::FullUGCDetails &itemDetails )
+{
+	m_pPatchNoteGroupBox->setEnabled( true );
+
+	auto tagList = QString( itemDetails.standardDetails.m_rgchTags ).split( "," );
+	foreach( auto tag, tagList )
+		addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Multiplayer" || tag == "Custom Visuals" ) );
+
+	foreach( auto imageInfo, itemDetails.additionalDetails.imagePaths )
+		addImageWidgetItem( imageInfo[0], imageInfo[1] );
+
+	foreach( auto videoURL, itemDetails.additionalDetails.videoURLs )
+		addVideoWidgetItem( videoURL );
+
+	switch ( itemDetails.standardDetails.m_eVisibility )
+	{
+		case k_ERemoteStoragePublishedFileVisibilityPublic:
+			m_pVisibilityComboBox->setCurrentIndex( 0 );
+			break;
+		case k_ERemoteStoragePublishedFileVisibilityFriendsOnly:
+			m_pVisibilityComboBox->setCurrentIndex( 2 );
+			break;
+		case k_ERemoteStoragePublishedFileVisibilityPrivate:
+			m_pVisibilityComboBox->setCurrentIndex( 1 );
+			break;
+		case k_ERemoteStoragePublishedFileVisibilityUnlisted:
+			m_pVisibilityComboBox->setCurrentIndex( 3 );
+			break;
+	}
+}
+
+QListWidgetItem *CAdvancedOptionsDialog::createBasicListWidgetItem( const QString &labelText, QWidget *baseWidget, QListWidget *itemList, ListItemTypes type, bool removable )
+{
+	auto pBasicListItem = new QListWidgetItem( nullptr, type );
+
+	auto pListItemLayout = new QHBoxLayout( baseWidget );
+
+	auto pListItemText = new QLabel( labelText, this );
+	pListItemLayout->addWidget( pListItemText, Qt::AlignLeft );
+
+	if ( removable )
+	{
+		auto pRemoveItemButton = new QPushButton( "X", baseWidget );
+		pRemoveItemButton->setFixedSize( 16, 16 );
+
+		connect( pRemoveItemButton, &QPushButton::clicked, baseWidget, [pBasicListItem, itemList]
+				 {
+					 int insertRow = itemList->indexFromItem( pBasicListItem ).row();
+					 auto listItem = itemList->takeItem( insertRow );
+					 itemList->removeItemWidget( listItem );
+					 delete listItem;
+				 } );
+
+		pListItemLayout->addWidget( pRemoveItemButton, Qt::AlignRight );
+	}
+
+	pBasicListItem->setSizeHint( QSize( 0, 32 ) );
+	baseWidget->setLayout( pListItemLayout );
+	return pBasicListItem;
+}
+
+void CAdvancedOptionsDialog::addImageWidgetItem( const QString &name, const QString &path, bool removable )
+{
+	auto pBaseWidget = new QWidget( this );
+
+	auto pAddImageItem = createBasicListWidgetItem( name, pBaseWidget, m_pMediaListWidget, IMAGE, removable );
+
+	pAddImageItem->setData( Qt::UserRole, path );
+
+	int insertRow = m_pMediaListWidget->indexFromItem( m_pImageVideoSeparator ).row();
+	m_pMediaListWidget->insertItem( insertRow + 2, pAddImageItem );
+
+	m_pMediaListWidget->setItemWidget( pAddImageItem, pBaseWidget );
+}
+
+void CAdvancedOptionsDialog::addVideoWidgetItem( const QString &name, bool removable )
+{
+	auto pBaseWidget = new QWidget( this );
+	auto pAddVideoItem = createBasicListWidgetItem( name, pBaseWidget, m_pMediaListWidget, VIDEO, removable );
+
+	pAddVideoItem->setData( Qt::UserRole, name );
+
+	int insertRow = m_pMediaListWidget->indexFromItem( m_pImageVideoSeparator ).row();
+	m_pMediaListWidget->insertItem( insertRow, pAddVideoItem );
+	m_pMediaListWidget->setItemWidget( pAddVideoItem, pBaseWidget );
+}
+
+void CAdvancedOptionsDialog::addTagWidgetItem( const QString &name, bool removable )
+{
+	auto pBaseWidget = new QWidget( this );
+	auto pAddTagItem = createBasicListWidgetItem( name, pBaseWidget, m_pTagsListWidget, TAG, removable );
+
+	pAddTagItem->setData( Qt::UserRole, name );
+
+	m_pTagsListWidget->addItem( pAddTagItem );
+	m_pTagsListWidget->setItemWidget( pAddTagItem, pBaseWidget );
+}
+
+void CAdvancedOptionsDialog::simpleInputDialog( QString &resultString )
+{
+	auto pSimpleVideoAddDialog = new QDialog( this );
+	pSimpleVideoAddDialog->setWindowTitle( "Input" );
+	pSimpleVideoAddDialog->setAttribute( Qt::WA_DeleteOnClose );
+
+	auto pSimpleVideoAddLayout = new QGridLayout( pSimpleVideoAddDialog );
+
+	auto pAddVideoLineEdit = new QLineEdit( pSimpleVideoAddDialog );
+	pAddVideoLineEdit->setMaxLength( 256 );
+	pSimpleVideoAddLayout->addWidget( pAddVideoLineEdit, 0, 0 );
+
+	auto pAddVideoButtonBox = new QDialogButtonBox( pSimpleVideoAddDialog );
+
+	auto pAddButton = pAddVideoButtonBox->addButton( "Add", QDialogButtonBox::ApplyRole );
+	pAddButton->setToolTip( "Cannot insert empty tag." );
+	pAddButton->setDisabled( true );
+	pAddVideoButtonBox->addButton( "Cancel", QDialogButtonBox::RejectRole );
+
+	pSimpleVideoAddLayout->addWidget( pAddVideoButtonBox, 1, 0, Qt::AlignLeft );
+
+	connect( pAddVideoLineEdit, &QLineEdit::textEdited, this, [pAddButton]( const QString &text )
+			 {
+				 if ( text.toStdString().find_first_not_of( ' ' ) == std::string::npos || text.isEmpty() )
+				 {
+					 pAddButton->setDisabled( true );
+					 pAddButton->setToolTip( "Cannot insert empty tag." );
+					 return;
+				 }
+
+				 auto remStartSpaces = QString( text ).replace( " ", "" );
+
+				 if ( remStartSpaces.compare( "Singleplayer" ) == 0 || remStartSpaces.compare( "Cooperative" ) == 0 )
+				 {
+					 pAddButton->setDisabled( true );
+					 pAddButton->setToolTip( "Cannot (re)assign Singleplayer/Cooperative tags." );
+					 return;
+				 }
+
+				 foreach( int ch, text.toStdString() )
+					 if ( isprint( ch ) == 0 || char( ch ) == ',' )
+					 {
+						 pAddButton->setDisabled( true );
+						 pAddButton->setToolTip( "Tag must not contain non printable characters or ',' (commas)" );
+						 return;
+					 }
+				 pAddButton->setToolTip( "" );
+				 pAddButton->setDisabled( false );
+			 } );
+
+	connect( pAddVideoButtonBox, &QDialogButtonBox::clicked, pSimpleVideoAddDialog, [pSimpleVideoAddDialog, pAddVideoLineEdit, &resultString]( QAbstractButton *btn )
+			 {
+				 if ( btn->text() == "Add" && !pAddVideoLineEdit->text().isEmpty() )
+					 resultString = pAddVideoLineEdit->text();
+				 pSimpleVideoAddDialog->close();
+			 } );
+
+	pSimpleVideoAddDialog->exec();
+}
+
+void CAdvancedOptionsDialog::populateDefaultMediaListWidget()
+{
+	auto pAddVideoItem = new QListWidgetItem( "+ Add Video", nullptr, ADD_VIDEO );
+	m_pMediaListWidget->addItem( pAddVideoItem );
+
+	m_pImageVideoSeparator = new QListWidgetItem( nullptr, NO_TYPE );
+	m_pImageVideoSeparator->setFlags( Qt::ItemFlag::NoItemFlags );
+	m_pMediaListWidget->addItem( m_pImageVideoSeparator );
+
+	auto separatorFrame = new QFrame();
+	separatorFrame->setFrameShape( QFrame::HLine );
+	m_pMediaListWidget->setItemWidget( m_pImageVideoSeparator, separatorFrame );
+
+	auto pAddImageItem = new QListWidgetItem( "+ Add Image", nullptr, ADD_IMAGE );
+
+	m_pMediaListWidget->addItem( pAddImageItem );
+}
+
+void CAdvancedOptionsDialog::populateDefaultTagListWidget()
+{
+	auto pAddTagItem = new QListWidgetItem( "+ Add Tag", nullptr, ADD_TAG );
+	m_pTagsListWidget->addItem( pAddTagItem );
+	this->addTagWidgetItem("Custom Visuals", false);
+}
+
 CMapUploader::CMapUploader( QWidget *pParent ) :
 	QDialog( pParent )
 {
@@ -202,343 +522,6 @@ CMapUploader::CMapUploader( QWidget *pParent ) :
 			 } );
 }
 
-void CMapUploader::onBrowseBSPClicked()
-{
-	QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.bsp", nullptr, FILE_PICKER_OPTS );
-
-	if ( filePath.isEmpty() )
-		return;
-
-	QStringList tagList {};
-
-	if ( !this->retrieveBSP( filePath, tagList, m_MeetsPTIRequirements ) )
-		return;
-
-	if ( !m_MeetsPTIRequirements )
-	{
-		QString noticeMessage = "Unable to locate PTI instances. "
-								"Please be advised that although you are able to upload without one "
-								"by checking the corresponding checkbox in the advanced options. "
-								"It's strongly advised to include the instance, as the workshop systems "
-								"may not function without it.\n"
-								"What is a PTI Instance? Click here: <a href='http://www.thinkwithportals.com/puzzlemaker/workshop_compatibility.php'>PTI Instances</a>";
-
-		QMessageBox msgBox( QMessageBox::Information, "Notice", noticeMessage, QMessageBox::NoButton, this );
-		msgBox.setTextFormat( Qt::RichText );
-		msgBox.exec();
-	}
-
-	m_pAdvancedOptions->m_pTagsListWidget->clear();
-
-	m_pAdvancedOptions->populateDefaultTagListWidget();
-
-	foreach( auto tag, tagList )
-		m_pAdvancedOptions->addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Cooperative" || tag == "Custom Visuals" ) );
-
-	m_pAdvancedOptionsButton->setEnabled( true );
-	m_pBSPFileEntry->setText( filePath );
-	m_EditedBSP = true;
-}
-
-void CMapUploader::onBrowseThumbnailClicked()
-{
-	QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
-
-	if ( filePath.isEmpty() )
-		return;
-
-	SteamImageProcessError processError;
-	auto thumbnailScaledFilepath = processImageForSteamUpload( filePath, processError, true, 1914, 1078, MAX_IMAGE_SIZE );
-
-	switch ( processError )
-	{
-		case SteamImageProcessError::FILE_TOO_LARGE:
-			QMessageBox::critical( this, "Fatal Error", "The file is too large to post to the Steam Workshop.\n We do attempt to reduce quality to fit the image, but were unable to get it down far enough." );
-			break;
-		case SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR:
-			QMessageBox::critical( this, "Fatal Error", "Unable to create temp thumbnail folder. (Permission Denied)\n" + thumbnailScaledFilepath );
-			break;
-		case SteamImageProcessError::FILE_SAVE_ERROR:
-			QMessageBox::critical( this, "Fatal Error", "Unable to store scaled thumbnail. (Permission Denied)\n" + thumbnailScaledFilepath );
-			break;
-		default:
-			break;
-	}
-
-	m_pPreviewImageLabel->setPixmap( thumbnailScaledFilepath );
-	m_EditedThumbnail = true;
-	m_ThumbnailPath = thumbnailScaledFilepath;
-}
-
-QString CMapUploader::processImageForSteamUpload( const QString &filePath, SteamImageProcessError &fileError, bool constraints, int width, int height, int size )
-{
-	fileError = SteamImageProcessError::NO_ERROR;
-
-	auto steamUploadImage = QImage( filePath );
-
-	auto steamUploadImageFileInfo = QFileInfo( filePath );
-
-	if ( constraints )
-	{
-		steamUploadImage = steamUploadImage.scaled( width, height, Qt::IgnoreAspectRatio );
-
-		if ( steamUploadImageFileInfo.size() <= MAX_IMAGE_SIZE )
-			return filePath;
-	}
-
-	QByteArray imageBufferArray {};
-	QBuffer imageBuffer( &imageBufferArray );
-	imageBuffer.open( QIODevice::WriteOnly );
-
-	if ( steamUploadImageFileInfo.size() > MAX_IMAGE_SIZE )
-	{
-		steamUploadImage.save( &imageBuffer, "JPG" );
-		for ( int i = 95; imageBufferArray.size() > MAX_IMAGE_SIZE && i > 0; i -= 5 )
-		{
-			imageBufferArray.clear();
-			steamUploadImage.save( &imageBuffer, "JPG", i );
-		}
-
-		if ( imageBufferArray.size() > MAX_IMAGE_SIZE )
-		{
-			fileError = SteamImageProcessError::FILE_TOO_LARGE;
-			imageBuffer.close();
-			return "";
-		}
-
-		steamUploadImage = QImage::fromData( imageBufferArray, "JPG" );
-	}
-
-	imageBuffer.close();
-
-	auto thumbnailScaledDirectory = QDir::tempPath() + "/uploader_temp_images/";
-
-	if ( !QDir( thumbnailScaledDirectory ).exists() && !QDir().mkpath( thumbnailScaledDirectory ) )
-	{
-		fileError = SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR;
-		return thumbnailScaledDirectory;
-	}
-
-	quint32 uniqueFolderName = QRandomGenerator::global()->generate();
-	thumbnailScaledDirectory += QString::number( uniqueFolderName ) + "/";
-
-	if ( !QDir( thumbnailScaledDirectory ).exists() && !QDir().mkpath( thumbnailScaledDirectory ) )
-	{
-		fileError = SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR;
-		return thumbnailScaledDirectory;
-	}
-
-	auto thumbnailScaledFilepath = thumbnailScaledDirectory + steamUploadImageFileInfo.baseName() + ".jpg";
-
-	if ( !CMainView::isFileWritable( thumbnailScaledFilepath ) )
-	{
-		fileError = SteamImageProcessError::FILE_SAVE_ERROR;
-		return thumbnailScaledFilepath;
-	}
-
-	if ( !steamUploadImage.save( thumbnailScaledFilepath ) )
-	{
-		fileError = SteamImageProcessError::FILE_SAVE_ERROR;
-		return thumbnailScaledFilepath;
-	}
-
-	return thumbnailScaledFilepath;
-}
-
-void CMapUploader::setEditItem( const CMainView::FullUGCDetails &itemDetails )
-{
-	this->setWindowTitle( "Edit existing workshop map" );
-	QPixmap tempMap = QPixmap( itemDetails.thumbnailDetails );
-	tempMap = tempMap.scaled( 239, 134, Qt::IgnoreAspectRatio );
-	auto standardDetails = itemDetails.standardDetails;
-	m_EditPreviewCount = itemDetails.additionalDetails.amount;
-	m_pAdvancedOptionsButton->setEnabled( true );
-	m_pAdvancedOptionsButton->setToolTip( "" );
-	m_pPreviewImageLabel->setPixmap( tempMap );
-	m_pSteamToSAgreement->setChecked( true );
-	m_pOKButton->setText( "Update" );
-	m_pTitleLine->setText( standardDetails.m_rgchTitle );
-	m_pDescLine->setText( standardDetails.m_rgchDescription );
-	m_pBSPFileEntry->setText( standardDetails.m_pchFileName );
-	m_PublishedFileId = standardDetails.m_nPublishedFileId;
-	m_pAdvancedOptions->setEditItem( itemDetails );
-	m_IsEditing = true;
-}
-
-void CMapUploader::createNewWorkshopItem()
-{
-	QString bspFile {};
-	auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileEntry->text(), bspFile );
-
-	switch ( bspError )
-	{
-		case RemoteStorageUploadError::NO_ERROR:
-			break;
-		case RemoteStorageUploadError::FILE_DOESNT_EXIST:
-			QMessageBox::critical( this, "Missing BSP!", "The BSP file could not be found. make sure the BSP exists." );
-			this->setEnabled( true );
-			return;
-		case RemoteStorageUploadError::FILE_INACCESSIBLE:
-			QMessageBox::critical( this, "Read Error!", "Unable to access BSP contents. (permission denied.)" );
-			this->setEnabled( true );
-			return;
-		case RemoteStorageUploadError::QUOTA_EXCEEDED:
-			QMessageBox::critical( this, "Quota Exceeded!", "Your Steam Remote Storage Quota has been exceeded, could not upload BSP." );
-			this->setEnabled( true );
-			return;
-		case RemoteStorageUploadError::STREAM_CREATE_ERROR:
-			QMessageBox::critical( this, "Stream Create Error!", "Unable to create write stream to upload your BSP." );
-			this->setEnabled( true );
-			return;
-		case RemoteStorageUploadError::UPLOAD_ERROR:
-			QMessageBox::critical( this, "Stream Upload Error!", "Unable to upload your BSP to the remote storage servers." );
-			this->setEnabled( true );
-			return;
-	}
-
-	remoteFile = bspFile;
-
-	auto PublishFileCall = SteamRemoteStorage()->PublishWorkshopFile( bspFile.toUtf8().constData(), "", CMainView::m_GameID, "", "", ERemoteStoragePublishedFileVisibility::k_ERemoteStoragePublishedFileVisibilityUnlisted, nullptr, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
-	m_CallResultPublishItem.Set(PublishFileCall, this, &CMapUploader::publishWorkshopItemResult);
-
-}
-
-void CMapUploader::publishWorkshopItemResult( RemoteStoragePublishFileResult_t *pItem, bool bFailure )
-{
-
-	if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
-		SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
-
-	if ( bFailure || pItem->m_eResult != 1 )
-	{
-		QMessageBox::critical( this, "Fatal Error", "Something went wrong with the creation of this item., make sure the contents is valid, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
-		if ( auto mainWindowParent = dynamic_cast<CMainView *>( this->parent() ) )
-		{
-			SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( pItem->m_nPublishedFileId );
-			mainWindowParent->m_CallResultDeleteItem.Set( deleteItemCall, mainWindowParent, &CMainView::onDeleteItem );
-		}
-		this->setEnabled( true );
-		return;
-	}
-
-	this->updateWorkshopItem(pItem->m_nPublishedFileId);
-}
-
-bool CMapUploader::canUploadProceed( QString &errorString ) const
-{
-	bool canProceed = true;
-
-	if ( !m_IsEditing && !m_EditedBSP )
-	{
-		errorString += "x | BSP Selected\n";
-		canProceed = false;
-	}
-	else
-		errorString += "✓ | BSP Selected\n";
-
-	if ( m_pTitleLine->text().isEmpty() )
-	{
-		errorString += "x | Has title\n";
-		canProceed = false;
-	}
-	else
-		errorString += "✓ | Has title\n";
-
-	if ( !m_IsEditing && m_ThumbnailPath.isEmpty() )
-	{
-		errorString += "x | Has Thumbnail\n";
-		canProceed = false;
-	}
-	else
-		errorString += "✓ | Has Thumbnail\n";
-
-	if ( !m_IsEditing && !m_MeetsPTIRequirements && !m_pAdvancedOptions->m_pPTIInstanceCheckBox->isChecked() )
-	{
-		errorString += "x | Meets PTI requirements\n";
-		canProceed = false;
-	}
-	else
-		errorString += "✓ | Meets PTI requirements\n";
-
-	if ( !m_pSteamToSAgreement->isChecked() )
-	{
-		errorString += "x | Agreed to Workshop ToS\n";
-		canProceed = false;
-	}
-	else
-		errorString += "✓ | Agreed to Workshop ToS\n";
-
-	return canProceed;
-}
-
-CMapUploader::RemoteStorageUploadError CMapUploader::uploadToSteamLocalStorage( const QString &localPath, QString &storageFileName )
-{
-	constexpr const uint32 MAX_BSP_UPLOAD_CHUNK = 1024 * 1024 * 100; // 100mb
-
-	QFileInfo bspFileInfo( localPath );
-
-	auto fileName = ( QString( "mymaps/" ) + bspFileInfo.fileName() );
-
-	if ( !bspFileInfo.exists() )
-	{
-		return CMapUploader::RemoteStorageUploadError::FILE_DOESNT_EXIST;
-	}
-
-	QFile bspFile( localPath );
-
-	if ( !bspFile.open( QFile::ReadOnly ) )
-	{
-		return CMapUploader::RemoteStorageUploadError::FILE_INACCESSIBLE;
-	}
-
-	uint64 totalQuota;
-	uint64 availableQuota;
-
-	SteamRemoteStorage()->GetQuota( &totalQuota, &availableQuota );
-
-	if ( availableQuota - bspFile.size() < 0 )
-	{
-		return CMapUploader::RemoteStorageUploadError::QUOTA_EXCEEDED;
-	}
-
-	UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( fileName.toUtf8().constData() );
-
-	if ( filewritestreamhandle == k_UGCHandleInvalid )
-	{
-		return CMapUploader::RemoteStorageUploadError::STREAM_CREATE_ERROR;
-	}
-
-	QByteArray bspData = bspFile.readAll();
-
-	for ( int j = bspData.size(), i = 0; j > 0; j -= MAX_BSP_UPLOAD_CHUNK, i++ )
-	{
-		if ( j < MAX_BSP_UPLOAD_CHUNK )
-		{
-			if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), j ) )
-			{
-				SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
-				return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
-			}
-			continue;
-		}
-		if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), MAX_BSP_UPLOAD_CHUNK ) )
-		{
-			SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
-			return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
-		}
-	}
-
-	if ( !SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle ) )
-	{
-		SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
-		return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
-	}
-
-	bspFile.close();
-	storageFileName = fileName;
-	return CMapUploader::RemoteStorageUploadError::NO_ERROR;
-}
-
 void CMapUploader::updateBSPWithOldWorkshopResult( RemoteStorageUpdatePublishedFileResult_t *pItem, bool bFailure )
 {
 
@@ -638,6 +621,65 @@ void CMapUploader::updateWorkshopItemResult( SubmitItemUpdateResult_t *pItem, bo
 	this->close();
 }
 
+void CMapUploader::createNewWorkshopItem()
+{
+	QString bspFile {};
+	auto bspError = this->uploadToSteamLocalStorage( m_pBSPFileEntry->text(), bspFile );
+
+	switch ( bspError )
+	{
+		case RemoteStorageUploadError::NO_ERROR:
+			break;
+		case RemoteStorageUploadError::FILE_DOESNT_EXIST:
+			QMessageBox::critical( this, "Missing BSP!", "The BSP file could not be found. make sure the BSP exists." );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::FILE_INACCESSIBLE:
+			QMessageBox::critical( this, "Read Error!", "Unable to access BSP contents. (permission denied.)" );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::QUOTA_EXCEEDED:
+			QMessageBox::critical( this, "Quota Exceeded!", "Your Steam Remote Storage Quota has been exceeded, could not upload BSP." );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::STREAM_CREATE_ERROR:
+			QMessageBox::critical( this, "Stream Create Error!", "Unable to create write stream to upload your BSP." );
+			this->setEnabled( true );
+			return;
+		case RemoteStorageUploadError::UPLOAD_ERROR:
+			QMessageBox::critical( this, "Stream Upload Error!", "Unable to upload your BSP to the remote storage servers." );
+			this->setEnabled( true );
+			return;
+	}
+
+	remoteFile = bspFile;
+
+	auto PublishFileCall = SteamRemoteStorage()->PublishWorkshopFile( bspFile.toUtf8().constData(), "", CMainView::m_GameID, "", "", ERemoteStoragePublishedFileVisibility::k_ERemoteStoragePublishedFileVisibilityUnlisted, nullptr, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
+	m_CallResultPublishItem.Set(PublishFileCall, this, &CMapUploader::publishWorkshopItemResult);
+
+}
+
+void CMapUploader::publishWorkshopItemResult( RemoteStoragePublishFileResult_t *pItem, bool bFailure )
+{
+
+	if(SteamRemoteStorage()->FileExists(remoteFile.toUtf8().constData()))
+		SteamRemoteStorage()->FileDelete(remoteFile.toUtf8().constData());
+
+	if ( bFailure || pItem->m_eResult != 1 )
+	{
+		QMessageBox::critical( this, "Fatal Error", "Something went wrong with the creation of this item., make sure the contents is valid, Error code: " + QString::number( pItem->m_eResult ) + "\nfor information on this error code: https://partner.steamgames.com/doc/api/steam_api#EResult" );
+		if ( auto mainWindowParent = dynamic_cast<CMainView *>( this->parent() ) )
+		{
+			SteamAPICall_t deleteItemCall = SteamUGC()->DeleteItem( pItem->m_nPublishedFileId );
+			mainWindowParent->m_CallResultDeleteItem.Set( deleteItemCall, mainWindowParent, &CMainView::onDeleteItem );
+		}
+		this->setEnabled( true );
+		return;
+	}
+
+	this->updateWorkshopItem(pItem->m_nPublishedFileId);
+}
+
 bool CMapUploader::retrieveBSP( const QString &path, QStringList &tagList, bool &ptiRequirements )
 {
 	ptiRequirements = false;
@@ -673,7 +715,7 @@ bool CMapUploader::retrieveBSP( const QString &path, QStringList &tagList, bool 
 	}
 
 	CElementList::ListInitResponse res = CElementList::initialiseElementList();
-	if ( res == CElementList::ListInitResponse::FILEINVALID )
+	if ( res == CElementList::ListInitResponse::FILE_INVALID )
 		QMessageBox::warning( this, "Invalid KV File", "File elements.kv is Invalid. Using default configuration." );
 
 	return CMapUploader::getTagsFromEntityStringList( entityStringList, tagList, ptiRequirements );
@@ -774,322 +816,280 @@ bool CMapUploader::getTagsFromEntityStringList( const QStringList &entityList, Q
 	return true;
 }
 
-CAdvancedOptionsDialog::CAdvancedOptionsDialog( QWidget *pParent ) :
-	QDialog( pParent )
+QString CMapUploader::processImageForSteamUpload( const QString &filePath, SteamImageProcessError &fileError, bool constraints, int width, int height, int size )
 {
-	this->setWindowTitle( "Advanced Options" );
+	fileError = SteamImageProcessError::NO_ERROR;
 
-	auto pDialogLayout = new QGridLayout( this );
+	auto steamUploadImage = QImage( filePath );
 
-	auto pMediaGroupBox = new QGroupBox( tr( "Media" ), this );
+	auto steamUploadImageFileInfo = QFileInfo( filePath );
 
-	auto pMediaLayout = new QGridLayout( pMediaGroupBox );
+	if ( constraints )
+	{
+		steamUploadImage = steamUploadImage.scaled( width, height, Qt::IgnoreAspectRatio );
 
-	m_pImagePreviewLabel = new QLabel( this );
-	m_pImagePreviewLabel->setMinimumSize( 256, 144 );
-	QPixmap tempMap = QPixmap( ":/resource/SampleImage.png" );
+		if ( steamUploadImageFileInfo.size() <= MAX_IMAGE_SIZE )
+			return filePath;
+	}
+
+	QByteArray imageBufferArray {};
+	QBuffer imageBuffer( &imageBufferArray );
+	imageBuffer.open( QIODevice::WriteOnly );
+
+	if ( steamUploadImageFileInfo.size() > MAX_IMAGE_SIZE )
+	{
+		steamUploadImage.save( &imageBuffer, "JPG" );
+		for ( int i = 95; imageBufferArray.size() > MAX_IMAGE_SIZE && i > 0; i -= 5 )
+		{
+			imageBufferArray.clear();
+			steamUploadImage.save( &imageBuffer, "JPG", i );
+		}
+
+		if ( imageBufferArray.size() > MAX_IMAGE_SIZE )
+		{
+			fileError = SteamImageProcessError::FILE_TOO_LARGE;
+			imageBuffer.close();
+			return "";
+		}
+
+		steamUploadImage = QImage::fromData( imageBufferArray, "JPG" );
+	}
+
+	imageBuffer.close();
+
+	auto thumbnailScaledDirectory = QDir::tempPath() + "/uploader_temp_images/";
+
+	if ( !QDir( thumbnailScaledDirectory ).exists() && !QDir().mkpath( thumbnailScaledDirectory ) )
+	{
+		fileError = SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR;
+		return thumbnailScaledDirectory;
+	}
+
+	quint32 uniqueFolderName = QRandomGenerator::global()->generate();
+	thumbnailScaledDirectory += QString::number( uniqueFolderName ) + "/";
+
+	if ( !QDir( thumbnailScaledDirectory ).exists() && !QDir().mkpath( thumbnailScaledDirectory ) )
+	{
+		fileError = SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR;
+		return thumbnailScaledDirectory;
+	}
+
+	auto thumbnailScaledFilepath = thumbnailScaledDirectory + steamUploadImageFileInfo.baseName() + ".jpg";
+
+	if ( !CMainView::isFileWritable( thumbnailScaledFilepath ) )
+	{
+		fileError = SteamImageProcessError::FILE_SAVE_ERROR;
+		return thumbnailScaledFilepath;
+	}
+
+	if ( !steamUploadImage.save( thumbnailScaledFilepath ) )
+	{
+		fileError = SteamImageProcessError::FILE_SAVE_ERROR;
+		return thumbnailScaledFilepath;
+	}
+
+	return thumbnailScaledFilepath;
+}
+
+CMapUploader::RemoteStorageUploadError CMapUploader::uploadToSteamLocalStorage( const QString &localPath, QString &storageFileName )
+{
+	constexpr const uint32 MAX_BSP_UPLOAD_CHUNK = 1024 * 1024 * 100; // 100mb
+
+	QFileInfo bspFileInfo( localPath );
+
+	auto fileName = ( QString( "mymaps/" ) + bspFileInfo.fileName() );
+
+	if ( !bspFileInfo.exists() )
+	{
+		return CMapUploader::RemoteStorageUploadError::FILE_DOESNT_EXIST;
+	}
+
+	QFile bspFile( localPath );
+
+	if ( !bspFile.open( QFile::ReadOnly ) )
+	{
+		return CMapUploader::RemoteStorageUploadError::FILE_INACCESSIBLE;
+	}
+
+	uint64 totalQuota;
+	uint64 availableQuota;
+
+	SteamRemoteStorage()->GetQuota( &totalQuota, &availableQuota );
+
+	if ( availableQuota - bspFile.size() < 0 )
+	{
+		return CMapUploader::RemoteStorageUploadError::QUOTA_EXCEEDED;
+	}
+
+	UGCFileWriteStreamHandle_t filewritestreamhandle = SteamRemoteStorage()->FileWriteStreamOpen( fileName.toUtf8().constData() );
+
+	if ( filewritestreamhandle == k_UGCHandleInvalid )
+	{
+		return CMapUploader::RemoteStorageUploadError::STREAM_CREATE_ERROR;
+	}
+
+	QByteArray bspData = bspFile.readAll();
+
+	for ( int j = bspData.size(), i = 0; j > 0; j -= MAX_BSP_UPLOAD_CHUNK, i++ )
+	{
+		if ( j < MAX_BSP_UPLOAD_CHUNK )
+		{
+			if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), j ) )
+			{
+				SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
+				return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
+			}
+			continue;
+		}
+		if ( !SteamRemoteStorage()->FileWriteStreamWriteChunk( filewritestreamhandle, bspData.mid( MAX_BSP_UPLOAD_CHUNK * i, ( MAX_BSP_UPLOAD_CHUNK * ( i + 1 ) ) ).constData(), MAX_BSP_UPLOAD_CHUNK ) )
+		{
+			SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
+			return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
+		}
+	}
+
+	if ( !SteamRemoteStorage()->FileWriteStreamClose( filewritestreamhandle ) )
+	{
+		SteamRemoteStorage()->FileWriteStreamCancel( filewritestreamhandle );
+		return CMapUploader::RemoteStorageUploadError::UPLOAD_ERROR;
+	}
+
+	bspFile.close();
+	storageFileName = fileName;
+	return CMapUploader::RemoteStorageUploadError::NO_ERROR;
+}
+
+void CMapUploader::setEditItem( const CMainView::FullUGCDetails &itemDetails )
+{
+	this->setWindowTitle( "Edit existing workshop map" );
+	QPixmap tempMap = QPixmap( itemDetails.thumbnailDetails );
 	tempMap = tempMap.scaled( 239, 134, Qt::IgnoreAspectRatio );
-	m_pImagePreviewLabel->setPixmap( tempMap );
-	pMediaLayout->addWidget( m_pImagePreviewLabel, 0, 0 );
-
-	m_pMediaListWidget = new QListWidget( this );
-	m_pMediaListWidget->setSizePolicy( QSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding ) );
-	this->populateDefaultMediaListWidget();
-
-	pMediaLayout->addWidget( m_pMediaListWidget, 0, 1 );
-
-	pDialogLayout->addWidget( pMediaGroupBox, 0, 0, 1, 4 );
-
-	auto pTagsGroupBox = new QGroupBox( tr( "Tags" ), this );
-
-	auto pTagsLayout = new QGridLayout( pTagsGroupBox );
-
-	m_pTagsListWidget = new QListWidget( this );
-	m_pTagsListWidget->setSizePolicy( QSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding ) );
-	this->populateDefaultTagListWidget();
-
-	pTagsLayout->addWidget( m_pTagsListWidget, 0, 0 );
-
-	pDialogLayout->addWidget( pTagsGroupBox, 1, 0, 1, 3 );
-
-	m_pPatchNoteGroupBox = new QGroupBox( tr( "Patch Notes" ), this );
-	m_pPatchNoteGroupBox->setDisabled( true );
-
-	auto pPatchNoteLayout = new QGridLayout( m_pPatchNoteGroupBox );
-
-	m_pPatchNoteTextEdit = new QTextEdit( this );
-
-	pPatchNoteLayout->addWidget( m_pPatchNoteTextEdit );
-
-	pDialogLayout->addWidget( m_pPatchNoteGroupBox, 1, 3, 1, 1 );
-
-	auto pPTIInstanceVisibilityGroupBox = new QGroupBox( this );
-
-	auto pPTIInstanceVisibilityLayout = new QGridLayout( pPTIInstanceVisibilityGroupBox );
-
-	m_pPTIInstanceCheckBox = new QCheckBox( "Allow upload without PTI Instance", this );
-	pPTIInstanceVisibilityLayout->addWidget( m_pPTIInstanceCheckBox, 0, 0, 1, 3, Qt::AlignLeft );
-
-	auto pVisbilityLayout = new QHBoxLayout();
-
-	auto pVisibilityLabel = new QLabel( "Visibility:", this );
-	pVisbilityLayout->addWidget( pVisibilityLabel );
-
-	m_pVisibilityComboBox = new QComboBox( this );
-	m_pVisibilityComboBox->addItem( "public", k_ERemoteStoragePublishedFileVisibilityPublic );
-	m_pVisibilityComboBox->addItem( "private", k_ERemoteStoragePublishedFileVisibilityPrivate );
-	m_pVisibilityComboBox->addItem( "friends", k_ERemoteStoragePublishedFileVisibilityFriendsOnly );
-	m_pVisibilityComboBox->addItem( "unlisted", k_ERemoteStoragePublishedFileVisibilityUnlisted );
-
-	pVisbilityLayout->addWidget( m_pVisibilityComboBox );
-
-	pPTIInstanceVisibilityLayout->addLayout( pVisbilityLayout, 0, 4, Qt::AlignRight );
-
-	pDialogLayout->addWidget( pPTIInstanceVisibilityGroupBox, 2, 0, 1, 4 );
-
-	m_pCloseBox = new QDialogButtonBox( this );
-	auto closeButton = m_pCloseBox->addButton( "Close", QDialogButtonBox::ApplyRole );
-	pDialogLayout->addWidget( m_pCloseBox, 3, 0, 1, 4, Qt::AlignLeft );
-
-	connect( closeButton, &QPushButton::clicked, this, &CAdvancedOptionsDialog::close );
-
-	connect( m_pMediaListWidget, &QListWidget::itemDoubleClicked, this, [this]( QListWidgetItem *item )
-			 {
-				 if ( item->type() == ADD_IMAGE )
-				 {
-					 auto imageFilePath = QFileDialog::getOpenFileName( this, "Image File", "./", "(Images) *.png *.jpg *.jpeg", nullptr, FILE_PICKER_OPTS );
-
-					 if ( imageFilePath.isEmpty() )
-						 return;
-
-					 CMapUploader::SteamImageProcessError processError;
-					 auto thumbnailScaledFilepath = CMapUploader::processImageForSteamUpload( imageFilePath, processError, false, 0, 0, CMapUploader::MAX_IMAGE_SIZE );
-
-					 switch ( processError )
-					 {
-						 case CMapUploader::SteamImageProcessError::FILE_TOO_LARGE:
-							 QMessageBox::critical( this, "Fatal Error", "The file is too large to post to the Steam Workshop.\n We do attempt to reduce quality to fit the image, but were unable to get it down far enough." );
-							 return;
-						 case CMapUploader::SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR:
-							 QMessageBox::critical( this, "Fatal Error", "Unable to create temp folder. (Permission Denied)\n" + thumbnailScaledFilepath );
-							 return;
-						 case CMapUploader::SteamImageProcessError::FILE_SAVE_ERROR:
-							 QMessageBox::critical( this, "Fatal Error", "Unable to store scaled image. (Permission Denied)\n" + thumbnailScaledFilepath );
-							 return;
-						 default:
-							 break;
-					 }
-
-					 auto imageFileInfo = QFileInfo( thumbnailScaledFilepath );
-					 this->addImageWidgetItem( imageFileInfo.fileName(), thumbnailScaledFilepath );
-				 }
-
-				 if ( item->type() == ADD_VIDEO )
-				 {
-					 QString addVideoResult;
-					 this->simpleInputDialog( addVideoResult );
-					 this->addVideoWidgetItem( addVideoResult );
-				 }
-			 } );
-
-	connect( m_pMediaListWidget, &QListWidget::itemClicked, this, [this]( QListWidgetItem *item )
-			 {
-				 if ( item->type() == IMAGE )
-					 m_pImagePreviewLabel->setPixmap( QPixmap( ( item->data( Qt::UserRole ).toString() ) ).scaled( 239, 134, Qt::IgnoreAspectRatio ) );
-			 } );
-
-	connect( m_pTagsListWidget, &QListWidget::itemDoubleClicked, this, [this]( QListWidgetItem *item )
-			 {
-				 if ( item->type() == ADD_TAG )
-				 {
-					 QString addTagResult;
-
-					 this->simpleInputDialog( addTagResult );
-					 if ( !addTagResult.isEmpty() )
-						 this->addTagWidgetItem( addTagResult );
-				 }
-			 } );
+	auto standardDetails = itemDetails.standardDetails;
+	m_EditPreviewCount = itemDetails.additionalDetails.amount;
+	m_pAdvancedOptionsButton->setEnabled( true );
+	m_pAdvancedOptionsButton->setToolTip( "" );
+	m_pPreviewImageLabel->setPixmap( tempMap );
+	m_pSteamToSAgreement->setChecked( true );
+	m_pOKButton->setText( "Update" );
+	m_pTitleLine->setText( standardDetails.m_rgchTitle );
+	m_pDescLine->setText( standardDetails.m_rgchDescription );
+	m_pBSPFileEntry->setText( standardDetails.m_pchFileName );
+	m_PublishedFileId = standardDetails.m_nPublishedFileId;
+	m_pAdvancedOptions->setEditItem( itemDetails );
+	m_IsEditing = true;
 }
 
-void CAdvancedOptionsDialog::populateDefaultMediaListWidget()
+bool CMapUploader::canUploadProceed( QString &errorString ) const
 {
-	auto pAddVideoItem = new QListWidgetItem( "+ Add Video", nullptr, ADD_VIDEO );
-	m_pMediaListWidget->addItem( pAddVideoItem );
+	bool canProceed = true;
 
-	m_pImageVideoSeparator = new QListWidgetItem( nullptr, NO_TYPE );
-	m_pImageVideoSeparator->setFlags( Qt::ItemFlag::NoItemFlags );
-	m_pMediaListWidget->addItem( m_pImageVideoSeparator );
-
-	auto separatorFrame = new QFrame();
-	separatorFrame->setFrameShape( QFrame::HLine );
-	m_pMediaListWidget->setItemWidget( m_pImageVideoSeparator, separatorFrame );
-
-	auto pAddImageItem = new QListWidgetItem( "+ Add Image", nullptr, ADD_IMAGE );
-
-	m_pMediaListWidget->addItem( pAddImageItem );
-}
-
-void CAdvancedOptionsDialog::populateDefaultTagListWidget()
-{
-	auto pAddTagItem = new QListWidgetItem( "+ Add Tag", nullptr, ADD_TAG );
-	m_pTagsListWidget->addItem( pAddTagItem );
-	this->addTagWidgetItem("Custom Visuals", false);
-}
-
-void CAdvancedOptionsDialog::simpleInputDialog( QString &resultString )
-{
-	auto pSimpleVideoAddDialog = new QDialog( this );
-	pSimpleVideoAddDialog->setWindowTitle( "Input" );
-	pSimpleVideoAddDialog->setAttribute( Qt::WA_DeleteOnClose );
-
-	auto pSimpleVideoAddLayout = new QGridLayout( pSimpleVideoAddDialog );
-
-	auto pAddVideoLineEdit = new QLineEdit( pSimpleVideoAddDialog );
-	pAddVideoLineEdit->setMaxLength( 256 );
-	pSimpleVideoAddLayout->addWidget( pAddVideoLineEdit, 0, 0 );
-
-	auto pAddVideoButtonBox = new QDialogButtonBox( pSimpleVideoAddDialog );
-
-	auto pAddButton = pAddVideoButtonBox->addButton( "Add", QDialogButtonBox::ApplyRole );
-	pAddButton->setToolTip( "Cannot insert empty tag." );
-	pAddButton->setDisabled( true );
-	pAddVideoButtonBox->addButton( "Cancel", QDialogButtonBox::RejectRole );
-
-	pSimpleVideoAddLayout->addWidget( pAddVideoButtonBox, 1, 0, Qt::AlignLeft );
-
-	connect( pAddVideoLineEdit, &QLineEdit::textEdited, this, [pAddButton]( const QString &text )
-			 {
-				 if ( text.toStdString().find_first_not_of( ' ' ) == std::string::npos || text.isEmpty() )
-				 {
-					 pAddButton->setDisabled( true );
-					 pAddButton->setToolTip( "Cannot insert empty tag." );
-					 return;
-				 }
-
-				 auto remStartSpaces = QString( text ).replace( " ", "" );
-
-				 if ( remStartSpaces.compare( "Singleplayer" ) == 0 || remStartSpaces.compare( "Cooperative" ) == 0 )
-				 {
-					 pAddButton->setDisabled( true );
-					 pAddButton->setToolTip( "Cannot (re)assign Singleplayer/Cooperative tags." );
-					 return;
-				 }
-
-				 foreach( int ch, text.toStdString() )
-					 if ( isprint( ch ) == 0 || char( ch ) == ',' )
-					 {
-						 pAddButton->setDisabled( true );
-						 pAddButton->setToolTip( "Tag must not contain non printable characters or ',' (commas)" );
-						 return;
-					 }
-				 pAddButton->setToolTip( "" );
-				 pAddButton->setDisabled( false );
-			 } );
-
-	connect( pAddVideoButtonBox, &QDialogButtonBox::clicked, pSimpleVideoAddDialog, [pSimpleVideoAddDialog, pAddVideoLineEdit, &resultString]( QAbstractButton *btn )
-			 {
-				 if ( btn->text() == "Add" && !pAddVideoLineEdit->text().isEmpty() )
-					 resultString = pAddVideoLineEdit->text();
-				 pSimpleVideoAddDialog->close();
-			 } );
-
-	pSimpleVideoAddDialog->exec();
-}
-
-QListWidgetItem *CAdvancedOptionsDialog::createBasicListWidgetItem( const QString &labelText, QWidget *baseWidget, QListWidget *itemList, ListItemTypes type, bool removable )
-{
-	auto pBasicListItem = new QListWidgetItem( nullptr, type );
-
-	auto pListItemLayout = new QHBoxLayout( baseWidget );
-
-	auto pListItemText = new QLabel( labelText, this );
-	pListItemLayout->addWidget( pListItemText, Qt::AlignLeft );
-
-	if ( removable )
+	if ( !m_IsEditing && !m_EditedBSP )
 	{
-		auto pRemoveItemButton = new QPushButton( "X", baseWidget );
-		pRemoveItemButton->setFixedSize( 16, 16 );
+		errorString += "x | BSP Selected\n";
+		canProceed = false;
+	}
+	else
+		errorString += "✓ | BSP Selected\n";
 
-		connect( pRemoveItemButton, &QPushButton::clicked, baseWidget, [pBasicListItem, itemList]
-				 {
-					 int insertRow = itemList->indexFromItem( pBasicListItem ).row();
-					 auto listItem = itemList->takeItem( insertRow );
-					 itemList->removeItemWidget( listItem );
-					 delete listItem;
-				 } );
+	if ( m_pTitleLine->text().isEmpty() )
+	{
+		errorString += "x | Has title\n";
+		canProceed = false;
+	}
+	else
+		errorString += "✓ | Has title\n";
 
-		pListItemLayout->addWidget( pRemoveItemButton, Qt::AlignRight );
+	if ( !m_IsEditing && m_ThumbnailPath.isEmpty() )
+	{
+		errorString += "x | Has Thumbnail\n";
+		canProceed = false;
+	}
+	else
+		errorString += "✓ | Has Thumbnail\n";
+
+	if ( !m_IsEditing && !m_MeetsPTIRequirements && !m_pAdvancedOptions->m_pPTIInstanceCheckBox->isChecked() )
+	{
+		errorString += "x | Meets PTI requirements\n";
+		canProceed = false;
+	}
+	else
+		errorString += "✓ | Meets PTI requirements\n";
+
+	if ( !m_pSteamToSAgreement->isChecked() )
+	{
+		errorString += "x | Agreed to Workshop ToS\n";
+		canProceed = false;
+	}
+	else
+		errorString += "✓ | Agreed to Workshop ToS\n";
+
+	return canProceed;
+}
+
+void CMapUploader::onBrowseBSPClicked()
+{
+	QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.bsp", nullptr, FILE_PICKER_OPTS );
+
+	if ( filePath.isEmpty() )
+		return;
+
+	QStringList tagList {};
+
+	if ( !this->retrieveBSP( filePath, tagList, m_MeetsPTIRequirements ) )
+		return;
+
+	if ( !m_MeetsPTIRequirements )
+	{
+		QString noticeMessage = "Unable to locate PTI instances. "
+								"Please be advised that although you are able to upload without one "
+								"by checking the corresponding checkbox in the advanced options. "
+								"It's strongly advised to include the instance, as the workshop systems "
+								"may not function without it.\n"
+								"What is a PTI Instance? Click here: <a href='http://www.thinkwithportals.com/puzzlemaker/workshop_compatibility.php'>PTI Instances</a>";
+
+		QMessageBox msgBox( QMessageBox::Information, "Notice", noticeMessage, QMessageBox::NoButton, this );
+		msgBox.setTextFormat( Qt::RichText );
+		msgBox.exec();
 	}
 
-	pBasicListItem->setSizeHint( QSize( 0, 32 ) );
-	baseWidget->setLayout( pListItemLayout );
-	return pBasicListItem;
-}
+	m_pAdvancedOptions->m_pTagsListWidget->clear();
 
-void CAdvancedOptionsDialog::addImageWidgetItem( const QString &name, const QString &path, bool removable )
-{
-	auto pBaseWidget = new QWidget( this );
+	m_pAdvancedOptions->populateDefaultTagListWidget();
 
-	auto pAddImageItem = createBasicListWidgetItem( name, pBaseWidget, m_pMediaListWidget, IMAGE, removable );
-
-	pAddImageItem->setData( Qt::UserRole, path );
-
-	int insertRow = m_pMediaListWidget->indexFromItem( m_pImageVideoSeparator ).row();
-	m_pMediaListWidget->insertItem( insertRow + 2, pAddImageItem );
-
-	m_pMediaListWidget->setItemWidget( pAddImageItem, pBaseWidget );
-}
-
-void CAdvancedOptionsDialog::addVideoWidgetItem( const QString &name, bool removable )
-{
-	auto pBaseWidget = new QWidget( this );
-	auto pAddVideoItem = createBasicListWidgetItem( name, pBaseWidget, m_pMediaListWidget, VIDEO, removable );
-
-	pAddVideoItem->setData( Qt::UserRole, name );
-
-	int insertRow = m_pMediaListWidget->indexFromItem( m_pImageVideoSeparator ).row();
-	m_pMediaListWidget->insertItem( insertRow, pAddVideoItem );
-	m_pMediaListWidget->setItemWidget( pAddVideoItem, pBaseWidget );
-}
-
-void CAdvancedOptionsDialog::addTagWidgetItem( const QString &name, bool removable )
-{
-	auto pBaseWidget = new QWidget( this );
-	auto pAddTagItem = createBasicListWidgetItem( name, pBaseWidget, m_pTagsListWidget, TAG, removable );
-
-	pAddTagItem->setData( Qt::UserRole, name );
-
-	m_pTagsListWidget->addItem( pAddTagItem );
-	m_pTagsListWidget->setItemWidget( pAddTagItem, pBaseWidget );
-}
-
-void CAdvancedOptionsDialog::setEditItem( const CMainView::FullUGCDetails &itemDetails )
-{
-	m_pPatchNoteGroupBox->setEnabled( true );
-
-	auto tagList = QString( itemDetails.standardDetails.m_rgchTags ).split( "," );
 	foreach( auto tag, tagList )
-		addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Multiplayer" || tag == "Custom Visuals" ) );
+		m_pAdvancedOptions->addTagWidgetItem( tag, !( tag == "Singleplayer" || tag == "Cooperative" || tag == "Custom Visuals" ) );
 
-	foreach( auto imageInfo, itemDetails.additionalDetails.imagePaths )
-		addImageWidgetItem( imageInfo[0], imageInfo[1] );
+	m_pAdvancedOptionsButton->setEnabled( true );
+	m_pBSPFileEntry->setText( filePath );
+	m_EditedBSP = true;
+}
 
-	foreach( auto videoURL, itemDetails.additionalDetails.videoURLs )
-		addVideoWidgetItem( videoURL );
+void CMapUploader::onBrowseThumbnailClicked()
+{
+	QString filePath = QFileDialog::getOpenFileName( this, "Open", "./", "*.png *.jpg", nullptr, FILE_PICKER_OPTS );
 
-	switch ( itemDetails.standardDetails.m_eVisibility )
+	if ( filePath.isEmpty() )
+		return;
+
+	SteamImageProcessError processError;
+	auto thumbnailScaledFilepath = processImageForSteamUpload( filePath, processError, true, 1914, 1078, MAX_IMAGE_SIZE );
+
+	switch ( processError )
 	{
-		case k_ERemoteStoragePublishedFileVisibilityPublic:
-			m_pVisibilityComboBox->setCurrentIndex( 0 );
+		case SteamImageProcessError::FILE_TOO_LARGE:
+			QMessageBox::critical( this, "Fatal Error", "The file is too large to post to the Steam Workshop.\n We do attempt to reduce quality to fit the image, but were unable to get it down far enough." );
 			break;
-		case k_ERemoteStoragePublishedFileVisibilityFriendsOnly:
-			m_pVisibilityComboBox->setCurrentIndex( 2 );
+		case SteamImageProcessError::FILE_DIRECTORY_CREATE_ERROR:
+			QMessageBox::critical( this, "Fatal Error", "Unable to create temp thumbnail folder. (Permission Denied)\n" + thumbnailScaledFilepath );
 			break;
-		case k_ERemoteStoragePublishedFileVisibilityPrivate:
-			m_pVisibilityComboBox->setCurrentIndex( 1 );
+		case SteamImageProcessError::FILE_SAVE_ERROR:
+			QMessageBox::critical( this, "Fatal Error", "Unable to store scaled thumbnail. (Permission Denied)\n" + thumbnailScaledFilepath );
 			break;
-		case k_ERemoteStoragePublishedFileVisibilityUnlisted:
-			m_pVisibilityComboBox->setCurrentIndex( 3 );
+		default:
 			break;
 	}
+
+	m_pPreviewImageLabel->setPixmap( thumbnailScaledFilepath );
+	m_EditedThumbnail = true;
+	m_ThumbnailPath = thumbnailScaledFilepath;
 }
