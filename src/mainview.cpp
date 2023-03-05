@@ -275,7 +275,6 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 		char previewContentURL[MAX_URL_SIZE];
 		char previewContentFileName[MAX_URL_SIZE];
 		EItemPreviewType previewContentType;
-
 		SteamUGC()->GetQueryUGCAdditionalPreview( queryHandle, itemIndex, i,
 												  previewContentURL, MAX_URL_SIZE, previewContentFileName,
 												  MAX_URL_SIZE, &previewContentType );
@@ -338,11 +337,10 @@ CMainView::AdditionalUGCDetails CMainView::getAdditionalUGCPreviews( UGCQueryHan
 
 			additionalDetails.imagePaths.append( fileInfoList );
 		}
+		
 		if ( previewContentType == k_EItemPreviewType_YouTubeVideo )
-		{
 			additionalDetails.videoURLs.append( previewContentURL );
-			break;
-		}
+
 	}
 
 	return additionalDetails;
