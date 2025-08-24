@@ -26,7 +26,7 @@ jobs:
           host: 'linux'
           target: 'desktop'
           arch: 'linux_gcc_64'
-          dir: '${{github.workspace}}/Qt'
+          dir: '${{github.workspace}}/libs/Qt'
           cache: true
 
       - name: Configure CMake
