@@ -25,7 +25,7 @@ jobs:
           version: 6.7.2
           host: 'linux'
           target: 'desktop'
-          arch: 'gcc_64'
+          arch: 'linux_gcc_64'
           dir: '${{github.workspace}}/libs/Qt'
           cache: true
 
@@ -73,7 +73,7 @@ jobs:
           version: 6.7.2
           host: 'windows'
           target: 'desktop'
-          arch: win64_msvc2025_64
+          arch: "win64_msvc2019_64"
           cache: true
 
       - name: Set up MSVC
