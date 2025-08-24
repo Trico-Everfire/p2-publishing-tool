@@ -2,10 +2,12 @@
 
 #include "steam_api.h"
 
-#include <QComboBox>
 #include <QDialog>
 #include <QTimer>
-#include <QTreeWidget>
+
+class QSpinBox;
+class QTreeWidget;
+class QComboBox;
 
 namespace ui
 {
@@ -34,6 +36,7 @@ namespace ui
 		std::map<int, FullUGCDetails> m_SteamUGCDetailsList;
 		QTreeWidget *m_pWorkshopItemTree;
 		QComboBox *m_pTimezoneComboBox;
+		QSpinBox *m_pPageBox;
 
 	private:
 		QTimer m_CallbackTimer;
@@ -54,6 +57,7 @@ namespace ui
 		CMainView::AdditionalUGCDetails getAdditionalUGCPreviews( UGCQueryHandle_t queryHandle, int previewCount, int itemIndex, PublishedFileId_t fileID );
 		QString downloadImageFromURL( const QString &imageUrl, QByteArray &imageData );
 		static bool isFileWritable( const QString &fullPath );
+
 	};
 
 } // namespace ui

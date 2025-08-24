@@ -12,7 +12,7 @@
 
 using namespace ui;
 
-static const constexpr int APP_ID = 644;
+//static const constexpr int APP_ID = 620;
 
 void shutdown_steam()
 {
@@ -21,10 +21,37 @@ void shutdown_steam()
 
 int main( int argc, char **argv )
 {
-	qputenv( "SteamAppId", QString::number( APP_ID ).toLocal8Bit() );
-	qputenv( "SteamGameId", QString::number( APP_ID ).toLocal8Bit() );
-
 	auto app = new QApplication( argc, argv );
+	QString APP_ID = "644";
+
+	for (int i = 0; i < argc; i++)
+	{
+		auto str = QString(argv[i]);
+		if(str.toCaseFolded() == "--appid")
+		{
+			if(i == argc-1)
+			{
+				QMessageBox::warning( nullptr, "No appid provided.", "You did not provide an appid.\n Defaulting to appid: "+APP_ID);
+				break;
+			}
+
+			auto possibleAppid = QString(argv[i + 1]);
+			bool possible;
+			possibleAppid.toInt(&possible);
+			if(!possible)
+			{
+				QMessageBox::warning( nullptr, "Invalid appid provided.", "You provided a non-numerical ID.\nIf Steam supports non-numerical IDs in the future. God help you.\nDefaulting to appid: "+APP_ID);
+				break;
+			}
+
+			APP_ID = possibleAppid;
+
+			qInfo() << "Appid override accepted. Now running appid:" +APP_ID;
+		}
+ 	}
+
+	qputenv( "SteamAppId",  APP_ID.toLocal8Bit() );
+	qputenv( "SteamGameId",  APP_ID.toLocal8Bit() );
 
 	QCommonStyle *style = (QCommonStyle *)QStyleFactory::create( "fusion" );
 	qApp->setStyle( style );

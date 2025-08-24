@@ -14,7 +14,10 @@
 #include <QNetworkRequest>
 #include <QPushButton>
 #include <QRandomGenerator>
+#include <QSpinBox>
 #include <QTimeZone>
+#include <QTreeWidget>
+#include <QComboBox>
 
 using namespace ui;
 
@@ -72,6 +75,14 @@ CMainView::CMainView( QWidget *pParent ) :
 	auto pRefreshButton = new QPushButton( "Refresh", this );
 	pButtonLayout->addWidget( pRefreshButton );
 
+	auto pageLayout = new QHBoxLayout();
+	pageLayout->addWidget(new QLabel("Page:",this));
+	m_pPageBox = new QSpinBox(this);
+	m_pPageBox->setMinimum(1);
+	m_pPageBox->setMaximum(999); //If you have more than 999 pages. Seek help.
+	pageLayout->addWidget( m_pPageBox );
+	pButtonLayout->addLayout(pageLayout);
+
 	pMainViewLayout->addLayout( pButtonLayout, 0, 6, Qt::AlignLeft );
 
 	m_CallbackTimer.setSingleShot( false );
@@ -126,7 +137,7 @@ void CMainView::populateWorkshopList()
 																		   k_EUserUGCList_Published,
 																		   k_EUGCMatchingUGCType_Items_ReadyToUse,
 																		   k_EUserUGCListSortOrder_CreationOrderDesc,
-																		   SteamUtils()->GetAppID(), m_GameID, 1 );
+																		   SteamUtils()->GetAppID(), m_GameID, m_pPageBox->value() );
 	SteamUGC()->SetReturnAdditionalPreviews( hQueryResult, true );
 	SteamUGC()->SetReturnLongDescription( hQueryResult, true );
 	SteamUGC()->SetReturnMetadata( hQueryResult, true );

@@ -16,6 +16,7 @@
 #include <QRandomGenerator>
 #include <QSizePolicy>
 #include <QTextEdit>
+#include <QComboBox>
 
 using namespace ui;
 
@@ -293,7 +294,7 @@ void CAdvancedOptionsDialog::simpleInputDialog( QString &resultString )
 					 return;
 				 }
 
-				 foreach( int ch, fieldText.toStdString() )
+				 foreach( unsigned char ch, fieldText.toStdString() )
 					 if ( isprint( ch ) == 0 || char( ch ) == ',' )
 					 {
 						 pAddButton->setDisabled( true );

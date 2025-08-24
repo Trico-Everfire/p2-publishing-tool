@@ -19,7 +19,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: 6.4.1
+          version: 6.7.2
           host: linux
           target: desktop
           dir: '${{github.workspace}}/libs/Qt'
@@ -28,7 +28,7 @@ jobs:
         run: git clone https://Trico-Everfire:${{secrets.STEAMWORKS_TOKEN}}@github.com/Trico-Everfire/steamworks.git "${{github.workspace}}/libs/Steam-API"
 
       - name: Configure CMake
-        run: cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/6.4.1/gcc_64'
+        run: cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR='${{github.workspace}}/libs/Qt/Qt/6.7.2/gcc_64'
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
@@ -65,7 +65,7 @@ jobs:
         with:
           dir: '${{github.workspace}}/libs/Qt'
 
-          version: 6.4.1
+          version: 6.7.2
           arch: win64_msvc2019_64
 
       - name: Install Steamworks
@@ -77,7 +77,7 @@ jobs:
       - name: Configure CMake
         env:
           CMAKE_PREFIX_PATH: ${{env.Qt6_Dir}}
-        run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR=${{github.workspace}}\libs\Qt\Qt\6.4.1\msvc2019_64
+        run: cmake -G "Ninja" -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DQT_BASEDIR=${{github.workspace}}\libs\Qt\Qt\6.7.2\msvc2019_64
 
       - name: Build
         run: cmake --build build --config ${{matrix.build_type}}
