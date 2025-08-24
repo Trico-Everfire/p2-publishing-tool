@@ -584,11 +584,11 @@ void CMapUploader::updateWorkshopItem( PublishedFileId_t publishedFileId )
 
 	if(m_isPreviewMarkedDirty)
 	{
+		for ( int i = 0; i < m_EditPreviewCount; i++ )
+			SteamUGC()->RemoveItemPreview( updateItemHandle, i );
+
 		if ( m_EditPreviewCount > 0 )
 		{
-			for ( int i = 0; i < m_EditPreviewCount; i++ )
-				SteamUGC()->RemoveItemPreview( updateItemHandle, i );
-
 			for ( int i = 0; i < m_pAdvancedOptions->m_pMediaListWidget->count(); ++i )
 			{
 				QListWidgetItem *item = m_pAdvancedOptions->m_pMediaListWidget->item( i );
