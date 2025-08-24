@@ -87,6 +87,7 @@ namespace ui
 		bool m_EditedBSP = false;
 		bool m_EditedThumbnail = false;
 		bool m_MeetsPTIRequirements = false;
+		bool m_isPreviewMarkedDirty = false;
 		int m_EditPreviewCount = 0;
 		QString remoteFile;
 		PublishedFileId_t m_PublishedFileId;
@@ -128,5 +129,6 @@ namespace ui
 		bool canUploadProceed( QString &errorString ) const;
 		void onBrowseBSPClicked();
 		void onBrowseThumbnailClicked();
+		void markPreviewsDirty();
 	};
 } // namespace ui

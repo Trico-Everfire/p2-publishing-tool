@@ -128,6 +128,8 @@ CAdvancedOptionsDialog::CAdvancedOptionsDialog( QWidget *pParent ) :
 
 					 auto imageFileInfo = QFileInfo( thumbnailScaledFilepath );
 					 this->addImageWidgetItem( imageFileInfo.fileName(), thumbnailScaledFilepath );
+					 auto par = dynamic_cast<CMapUploader*>(parentWidget());
+					 par->markPreviewsDirty();
 				 }
 
 				 if ( item->type() == ADD_VIDEO )
@@ -135,6 +137,8 @@ CAdvancedOptionsDialog::CAdvancedOptionsDialog( QWidget *pParent ) :
 					 QString addVideoResult;
 					 this->simpleInputDialog( addVideoResult );
 					 this->addVideoWidgetItem( addVideoResult );
+					 auto par = dynamic_cast<CMapUploader*>(parentWidget());
+					 par->markPreviewsDirty();
 				 }
 			 } );
 
@@ -202,10 +206,15 @@ QListWidgetItem *CAdvancedOptionsDialog::createBasicListWidgetItem( const QStrin
 		auto pRemoveItemButton = new QPushButton( "X", pBaseWidget );
 		pRemoveItemButton->setFixedSize( 16, 16 );
 
-		connect( pRemoveItemButton, &QPushButton::clicked, pBaseWidget, [pBasicListItem, pListWidget]
+		connect( pRemoveItemButton, &QPushButton::clicked, pBaseWidget, [&,pBasicListItem, pListWidget]
 				 {
 					 int insertRow = pListWidget->indexFromItem( pBasicListItem ).row();
 					 auto listItem = pListWidget->takeItem( insertRow );
+					 if(listItem->type() == VIDEO || listItem->type() == IMAGE)
+					 {
+						 auto par = dynamic_cast<CMapUploader*>(this->parentWidget());
+						 par->markPreviewsDirty();
+					 }
 					 pListWidget->removeItemWidget( listItem );
 					 delete listItem;
 				 } );
@@ -573,29 +582,33 @@ void CMapUploader::updateWorkshopItem( PublishedFileId_t publishedFileId )
 	if ( m_EditedThumbnail )
 		SteamUGC()->SetItemPreview( updateItemHandle, m_ThumbnailPath.toLocal8Bit().constData() );
 
-	if ( m_EditPreviewCount > 0 )
-		for ( int i = 0; i < m_EditPreviewCount; i++ )
-			SteamUGC()->RemoveItemPreview( updateItemHandle, i );
-
-	for ( int i = 0; i < m_pAdvancedOptions->m_pMediaListWidget->count(); ++i )
+	if(m_isPreviewMarkedDirty)
 	{
-		QListWidgetItem *item = m_pAdvancedOptions->m_pMediaListWidget->item( i );
-
-		switch ( item->type() )
+		if ( m_EditPreviewCount > 0 )
 		{
-			case CAdvancedOptionsDialog::IMAGE:
-				SteamUGC()->AddItemPreviewFile( updateItemHandle, item->data( Qt::UserRole ).toString().toLocal8Bit().constData(), k_EItemPreviewType_Image );
-				break;
+			for ( int i = 0; i < m_EditPreviewCount; i++ )
+				SteamUGC()->RemoveItemPreview( updateItemHandle, i );
 
-			case CAdvancedOptionsDialog::VIDEO:
-				SteamUGC()->AddItemPreviewVideo( updateItemHandle, item->data( Qt::UserRole ).toString().toLocal8Bit().constData() );
-				break;
+			for ( int i = 0; i < m_pAdvancedOptions->m_pMediaListWidget->count(); ++i )
+			{
+				QListWidgetItem *item = m_pAdvancedOptions->m_pMediaListWidget->item( i );
 
-			default:
-				continue;
+				switch ( item->type() )
+				{
+					case CAdvancedOptionsDialog::IMAGE:
+						SteamUGC()->AddItemPreviewFile( updateItemHandle, item->data( Qt::UserRole ).toString().toLocal8Bit().constData(), k_EItemPreviewType_Image );
+						break;
+
+					case CAdvancedOptionsDialog::VIDEO:
+						SteamUGC()->AddItemPreviewVideo( updateItemHandle, item->data( Qt::UserRole ).toString().toLocal8Bit().constData() );
+						break;
+
+					default:
+						continue;
+				}
+			}
 		}
 	}
-
 	auto updateCall = SteamUGC()->SubmitItemUpdate( updateItemHandle, m_pAdvancedOptions->m_pPatchNoteTextEdit->toPlainText().toLocal8Bit().constData() );
 	m_CallResultSubmitItemUpdate.Set( updateCall, this, &CMapUploader::updateWorkshopItemResult );
 }
@@ -755,24 +768,17 @@ bool CMapUploader::getTagsFromEntityStringList( const QStringList &entityList, Q
 		return false;
 	}
 	KeyValueRoot *elementKeyValues = CElementList::getElementList();
-
+	bool coop = false, singleplayer = false;
 	foreach( auto entityLumpString, entityList )
 	{
 		auto entityKeyValue = new KeyValueRoot();
 		entityKeyValue->Parse( entityLumpString.toStdString().c_str() );
 		auto entityClassName = QString( entityKeyValue->Get( "entity" ).Get( "classname" ).value.string );
 
-		if ( entityClassName.compare( "Singleplayer" ) == 0 && tagList.contains( "Cooperative" ) )
-			return false;
-
-		if ( entityClassName.compare( "Cooperative" ) == 0 && tagList.contains( "Singleplayer" ) )
-			return false;
-
-		if ( entityClassName.compare( "info_player_start" ) == 0 && !tagList.contains( "Singleplayer" ) )
-			tagList << "Singleplayer";
-
-		if ( entityClassName.compare( "info_coop_spawn" ) == 0 && !tagList.contains( "Cooperative" ) )
-			tagList << "Cooperative";
+		if(entityClassName.compare( "info_player_start" ) == 0)
+			singleplayer = true;
+		if(entityClassName.compare( "info_coop_spawn" ) == 0)
+			coop = true;
 
 		if ( QString( entityKeyValue->Get( "entity" ).Get( "targetname" ).value.string ).compare( "@relay_pti_level_end" ) == 0 )
 			ptiRequirements = true;
@@ -808,6 +814,13 @@ bool CMapUploader::getTagsFromEntityStringList( const QStringList &entityList, Q
 				tagList << QString( elementEntityKeyValue["tag"].value.string );
 		}
 	}
+	if(coop)
+		tagList << "Cooperative";
+	else if (singleplayer)
+		tagList << "Singleplayer";
+	else
+		return false;
+
 	return true;
 }
 
@@ -1087,4 +1100,8 @@ void CMapUploader::onBrowseThumbnailClicked()
 	m_pPreviewImageLabel->setPixmap( thumbnailScaledFilepath );
 	m_EditedThumbnail = true;
 	m_ThumbnailPath = thumbnailScaledFilepath;
+}
+void CMapUploader::markPreviewsDirty()
+{
+	m_isPreviewMarkedDirty = true;
 }
